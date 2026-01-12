@@ -1,0 +1,61 @@
+# Build artifacts
+build/
+dist/
+*.spec
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+ENV/
+env/
+.eggs/
+*.egg-info/
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-*
+
+# Application data
+.sort_moments_config.json
+*.log
+
+# AI Models (too large for git - downloaded automatically)
+.insightface/
+models/
+*.onnx
+
+# Claude settings
+.claude/
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Test/temp files
+*.tmp
+*.temp
+temp/
+tmp/
+
+
+nul
