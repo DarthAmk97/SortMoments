@@ -157,4 +157,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-Made with care by Abdullah Khawaja
+Made with care by Abdullah Khawaja with dearest collabortator Claude Code
