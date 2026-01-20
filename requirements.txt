@@ -1,0 +1,15 @@
+# Core dependencies
+PyQt6>=6.4.0
+opencv-python>=4.7.0
+numpy>=1.21.0
+Pillow>=9.0.0
+
+# Face detection and recognition (InsightFace unified pipeline)
+insightface>=0.7.0
+
+# ONNX Runtime with DirectML - works with ANY GPU (NVIDIA, AMD, Intel) on Windows
+# No CUDA installation required!
+onnxruntime-directml>=1.15.0
+
+# Build dependencies (optional - only needed to create executable)
+# pyinstaller>=5.0
