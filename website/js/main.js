@@ -12,53 +12,27 @@ const CONFIG = {
 };
 
 /**
- * Fetch download count from GitHub Releases API
+ * Fetch download count from server API
  */
 async function fetchDownloadCount() {
     const countElement = document.getElementById('downloadCount');
 
-    // Check cache first
-    const cached = getCachedCount();
-    if (cached !== null) {
-        updateCountDisplay(cached);
-        return;
-    }
-
     try {
-        const response = await fetch(
-            `https://api.github.com/repos/${CONFIG.githubOwner}/${CONFIG.githubRepo}/releases`,
-            {
-                headers: {
-                    'Accept': 'application/vnd.github.v3+json'
-                }
-            }
-        );
+        const response = await fetch('/api/counter');
 
         if (!response.ok) {
-            throw new Error(`GitHub API returned ${response.status}`);
+            throw new Error(`Server returned ${response.status}`);
         }
 
-        const releases = await response.json();
-
-        // Sum up all asset download counts across all releases
-        let totalDownloads = 0;
-        releases.forEach(release => {
-            if (release.assets) {
-                release.assets.forEach(asset => {
-                    totalDownloads += asset.download_count || 0;
-                });
-            }
-        });
-
-        // Cache the result
-        setCachedCount(totalDownloads);
+        const data = await response.json();
+        const count = data.count || 0;
 
         // Update display
-        updateCountDisplay(totalDownloads);
+        updateCountDisplay(count);
 
     } catch (error) {
         console.error('Error fetching download count:', error);
-        // Show fallback text
+        // Show fallback
         countElement.textContent = '0';
     }
 }
@@ -100,63 +74,28 @@ function animateValue(element, start, end, duration) {
     requestAnimationFrame(update);
 }
 
+
 /**
- * Get cached download count
+ * Track download button click and increment counter on server
  */
-function getCachedCount() {
+async function trackDownload() {
     try {
-        const cached = localStorage.getItem(CONFIG.cacheKey);
-        if (!cached) return null;
+        const response = await fetch('/api/counter/increment');
 
-        const { count, timestamp } = JSON.parse(cached);
-        const now = Date.now();
-
-        // Check if cache is still valid
-        if (now - timestamp < CONFIG.cacheDuration) {
-            return count;
+        if (!response.ok) {
+            throw new Error(`Server returned ${response.status}`);
         }
 
-        // Cache expired
-        localStorage.removeItem(CONFIG.cacheKey);
-        return null;
-    } catch (e) {
-        return null;
+        const data = await response.json();
+        const newCount = data.count || 0;
+
+        // Update display with animation
+        updateCountDisplay(newCount);
+
+        console.log('Download initiated. Counter updated to:', newCount);
+    } catch (error) {
+        console.error('Error incrementing counter:', error);
     }
-}
-
-/**
- * Cache the download count
- */
-function setCachedCount(count) {
-    try {
-        localStorage.setItem(CONFIG.cacheKey, JSON.stringify({
-            count,
-            timestamp: Date.now()
-        }));
-    } catch (e) {
-        // localStorage might not be available
-        console.warn('Could not cache download count:', e);
-    }
-}
-
-/**
- * Track download button click and update counter
- */
-function trackDownload() {
-    // Get current count from cache or localStorage
-    const cached = getCachedCount();
-    const currentCount = cached !== null ? cached : 0;
-    const newCount = currentCount + 1;
-
-    // Update cache with new count
-    setCachedCount(newCount);
-
-    // Update display with animation
-    updateCountDisplay(newCount);
-
-    // Optional: Add analytics tracking here if needed
-    // For example: Google Analytics, Plausible, etc.
-    console.log('Download initiated. Count updated to:', newCount);
 }
 
 /**
