@@ -5,7 +5,7 @@
 // Configuration
 const CONFIG = {
     // Update these with your actual GitHub username and repo name
-    githubOwner: 'abdullahkhawaja',
+    githubOwner: 'DarthAmk97',
     githubRepo: 'SortMoments',
     cacheKey: 'sortmoments_download_count',
     cacheDuration: 5 * 60 * 1000, // 5 minutes in milliseconds

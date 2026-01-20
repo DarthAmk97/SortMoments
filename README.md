@@ -4,7 +4,7 @@
 
 A free, open-source desktop application that automatically groups your photos by the people in them using advanced face detection and recognition.
 
-[Download](https://sortmoments.com) | [Website](https://sortmoments.com) | [Report Issues](https://github.com/abdullahkhawaja/SortMoments/issues)
+[Download](https://sortmoments.com) | [Website](https://sortmoments.com) | [Report Issues](https://github.com/DarthAmk97/SortMoments/issues)
 
 ---
 
@@ -23,7 +23,7 @@ A free, open-source desktop application that automatically groups your photos by
 
 ### Option 1: Download Pre-built Executable (Recommended)
 
-1. Download `SortMoments.exe` from [sortmoments.com](https://sortmoments.com) or [GitHub Releases](https://github.com/abdullahkhawaja/SortMoments/releases)
+1. Download `SortMoments.exe` from [sortmoments.com](https://sortmoments.com) or [GitHub Releases](https://github.com/DarthAmk97/SortMoments/releases)
 2. Run the executable (no installation required)
 3. Drag & drop a folder containing your photos
 4. Click "Start Processing"
@@ -33,7 +33,7 @@ A free, open-source desktop application that automatically groups your photos by
 
 ```bash
 # Clone the repository
-git clone https://github.com/abdullahkhawaja/SortMoments.git
+git clone https://github.com/DarthAmk97/SortMoments.git
 cd SortMoments
 
 # Create virtual environment (recommended)

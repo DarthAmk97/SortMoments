@@ -13,7 +13,7 @@ This guide explains how to build the Sort Moments application into a standalone 
 
 ```bash
 # Clone the repository (or download source code)
-git clone https://github.com/abdullahkhawaja/SortMoments.git
+git clone https://github.com/DarthAmk97/SortMoments.git
 cd SortMoments
 
 # Create a virtual environment
