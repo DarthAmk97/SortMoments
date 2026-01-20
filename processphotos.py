@@ -73,24 +73,36 @@ def initialize_face_analyzer(det_size=(640, 640)):
     except ImportError:
         raise ImportError("InsightFace not installed. Please install with: pip install insightface onnxruntime-gpu")
 
-    # Suppress tqdm output if stdout/stderr is not available (common in GUI apps)
-    import logging
-    logging.getLogger('tqdm').setLevel(logging.ERROR)
+    # Fix tqdm compatibility issue when stdout/stderr is None (common in GUI apps)
+    # This prevents "NoneType has no attribute 'write'" errors during model downloads
+    if sys.stdout is None or sys.stderr is None:
+        try:
+            import tqdm.std
+            # Patch tqdm's __init__ to use a dummy file when stdout is unavailable
+            original_init = tqdm.std.tqdm.__init__
 
-    # Monkey-patch tqdm to disable file output when stdout is None
-    try:
-        import tqdm
-        original_tqdm = tqdm.tqdm
+            def patched_init(self, iterable=None, desc=None, total=None, leave=True,
+                           file=None, ncols=None, mininterval=0.1, maxinterval=10.0,
+                           miniters=None, ascii=None, disable=False, unit='it',
+                           unit_scale=False, dynamic_ncols=False, smoothing=0.3,
+                           bar_format=None, initial=0, position=None, postfix=None,
+                           unit_divisor=1000, write_bytes=None, lock_args=None,
+                           nrows=None, colour=None, delay=0, **kwargs):
+                # Force file to be None to disable output
+                original_init(self, iterable=iterable, desc=desc, total=total,
+                            leave=leave, file=None, ncols=ncols,
+                            mininterval=mininterval, maxinterval=maxinterval,
+                            miniters=miniters, ascii=ascii, disable=True,
+                            unit=unit, unit_scale=unit_scale,
+                            dynamic_ncols=dynamic_ncols, smoothing=smoothing,
+                            bar_format=bar_format, initial=initial, position=position,
+                            postfix=postfix, unit_divisor=unit_divisor,
+                            write_bytes=write_bytes, lock_args=lock_args,
+                            nrows=nrows, colour=colour, delay=delay, **kwargs)
 
-        def patched_tqdm(*args, **kwargs):
-            if sys.stdout is None or sys.stderr is None:
-                kwargs['file'] = open(os.devnull, 'w')
-            return original_tqdm(*args, **kwargs)
-
-        tqdm.tqdm = patched_tqdm
-        tqdm.std.tqdm = patched_tqdm
-    except ImportError:
-        pass
+            tqdm.std.tqdm.__init__ = patched_init
+        except Exception:
+            pass
 
     providers = get_execution_providers()
 
