@@ -18,6 +18,7 @@ from PIL import Image
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from collections import defaultdict
 import shutil
+import sys
 
 
 # ============================================================================
@@ -71,6 +72,25 @@ def initialize_face_analyzer(det_size=(640, 640)):
         from insightface.app import FaceAnalysis
     except ImportError:
         raise ImportError("InsightFace not installed. Please install with: pip install insightface onnxruntime-gpu")
+
+    # Suppress tqdm output if stdout/stderr is not available (common in GUI apps)
+    import logging
+    logging.getLogger('tqdm').setLevel(logging.ERROR)
+
+    # Monkey-patch tqdm to disable file output when stdout is None
+    try:
+        import tqdm
+        original_tqdm = tqdm.tqdm
+
+        def patched_tqdm(*args, **kwargs):
+            if sys.stdout is None or sys.stderr is None:
+                kwargs['file'] = open(os.devnull, 'w')
+            return original_tqdm(*args, **kwargs)
+
+        tqdm.tqdm = patched_tqdm
+        tqdm.std.tqdm = patched_tqdm
+    except ImportError:
+        pass
 
     providers = get_execution_providers()
 
