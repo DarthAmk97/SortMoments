@@ -140,12 +140,23 @@ function setCachedCount(count) {
 }
 
 /**
- * Track download button click (optional analytics)
+ * Track download button click and update counter
  */
 function trackDownload() {
-    // You can add analytics tracking here if needed
+    // Get current count from cache or localStorage
+    const cached = getCachedCount();
+    const currentCount = cached !== null ? cached : 0;
+    const newCount = currentCount + 1;
+
+    // Update cache with new count
+    setCachedCount(newCount);
+
+    // Update display with animation
+    updateCountDisplay(newCount);
+
+    // Optional: Add analytics tracking here if needed
     // For example: Google Analytics, Plausible, etc.
-    console.log('Download initiated');
+    console.log('Download initiated. Count updated to:', newCount);
 }
 
 /**
