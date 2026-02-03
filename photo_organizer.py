@@ -22,8 +22,8 @@ from PyQt6.QtWidgets import (
     QSizePolicy, QLineEdit, QDialog, QStackedWidget, QToolButton,
     QSpacerItem, QLayout
 )
-from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QTimer, QRect, QPoint
-from PyQt6.QtGui import QPixmap, QFont, QColor, QPalette, QIcon, QCursor
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QTimer, QRect, QPoint, QRunnable, QThreadPool, QObject
+from PyQt6.QtGui import QPixmap, QFont, QColor, QPalette, QIcon, QCursor, QImage
 
 # Import the processing functions
 try:
@@ -219,6 +219,45 @@ QMessageBox QPushButton:hover {{
 }}
 """
 
+# ============================================================================
+# Background Thumbnail Worker
+# ============================================================================
+
+class WorkerSignals(QObject):
+    """Signals for the ThumbnailWorker."""
+    result = pyqtSignal(str, QImage)  # path, image
+
+class ThumbnailWorker(QRunnable):
+    """Worker to load and resize images in a background thread."""
+    
+    def __init__(self, image_path):
+        super().__init__()
+        self.image_path = image_path
+        self.signals = WorkerSignals()
+        
+    def run(self):
+        try:
+            # Load image into QImage (thread-safe, unlike QPixmap)
+            image = QImage(self.image_path)
+            if not image.isNull():
+                # Resize here in the background thread!
+                # Target size is 160x160 (thumbnail widget size)
+                # Using FastTransformation for speed, or SmoothTransformation for quality
+                scaled = image.scaled(
+                    160, 160,
+                    Qt.AspectRatioMode.KeepAspectRatioByExpanding,
+                    Qt.TransformationMode.SmoothTransformation
+                )
+                
+                # Crop center
+                x = (scaled.width() - 160) // 2
+                y = (scaled.height() - 160) // 2
+                cropped = scaled.copy(x, y, 160, 160)
+                
+                self.signals.result.emit(self.image_path, cropped)
+        except Exception:
+            pass
+
 
 class FlowLayout(QLayout):
     """A flow layout that arranges widgets in rows, wrapping to new rows as needed."""
@@ -362,9 +401,9 @@ class ProcessingThread(QThread):
             from processphotos import detect_and_embed_faces
             detect_and_embed_faces(
                 input_folder, output_folder,
-                min_face_size=80, min_confidence=0.8,
-                min_face_ratio=0.01, foreground_ratio_threshold=0.1,
-                blur_threshold=60,
+                min_face_size=50, min_confidence=0.7,
+                min_face_ratio=0.005, foreground_ratio_threshold=0.05,
+                blur_threshold=50,
                 batch_size=8, max_workers=4
             )
 
@@ -381,7 +420,7 @@ class ProcessingThread(QThread):
             self.status_update.emit("Grouping photos by person...")
             self.progress_update.emit(76)
 
-            persons_dict, processed_folder = reorganize_by_person(output_folder, similarity_threshold=0.5)
+            persons_dict, processed_folder = reorganize_by_person(output_folder, input_folder=input_folder, similarity_threshold=0.5)
 
             APP_LOGGER.info(f"Step 2 completed: Grouped into {len(persons_dict) if persons_dict else 0} persons")
             self.smooth_progress(76, 95, 0.3)
@@ -399,13 +438,22 @@ class ProcessingThread(QThread):
             clean_filenames(processed_folder)
 
             APP_LOGGER.info("Step 3 completed: Cleanup done")
-            self.smooth_progress(96, 100, 0.2)
+            self.smooth_progress(96, 99, 0.2)
+
+            # Step 4: Delete intermediate face detection folder
+            if os.path.exists(output_folder):
+                try:
+                    APP_LOGGER.info(f"Removing intermediate folder: {output_folder}")
+                    shutil.rmtree(output_folder)
+                except Exception as e:
+                    APP_LOGGER.warning(f"Failed to remove intermediate folder: {e}")
 
             if self._stop_requested:
                 APP_LOGGER.info("Processing stopped by user after Step 3")
                 self.finished_stopped.emit()
                 return
 
+            self.progress_update.emit(100)
             person_count = len(persons_dict) if persons_dict else 0
             APP_LOGGER.info(f"Processing completed successfully. Found {person_count} persons.")
             self.finished_success.emit(processed_folder, person_count)
@@ -638,23 +686,21 @@ class ImageThumbnail(QFrame):
         self.thumb_label = QLabel()
         self.thumb_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.thumb_label.setStyleSheet("border-radius: 10px;")
-
-        pixmap = QPixmap(image_path)
-        if not pixmap.isNull():
-            scaled = pixmap.scaled(
-                152, 152,
-                Qt.AspectRatioMode.KeepAspectRatioByExpanding,
-                Qt.TransformationMode.SmoothTransformation
-            )
-            x = (scaled.width() - 152) // 2
-            y = (scaled.height() - 152) // 2
-            cropped = scaled.copy(max(0, x), max(0, y), 152, 152)
-            self.thumb_label.setPixmap(cropped)
-        else:
-            self.thumb_label.setText("No Preview")
-            self.thumb_label.setStyleSheet(f"color: {COLORS['text_muted']};")
+        
+        # Start with placeholder
+        self.thumb_label.setText("Loading...")
+        self.thumb_label.setStyleSheet(f"color: {COLORS['text_muted']};")
 
         layout.addWidget(self.thumb_label)
+
+    def set_image(self, qimage):
+        """Update with actual image from background thread."""
+        if not qimage.isNull():
+            # Convert to pixmap on UI thread (fast)
+            self.thumb_label.setPixmap(QPixmap.fromImage(qimage))
+            self.thumb_label.setText("")
+        else:
+            self.thumb_label.setText("Error")
 
     def mousePressEvent(self, event):
         self.clicked.emit(self.image_path)
@@ -670,6 +716,11 @@ class FolderView(QWidget):
         super().__init__(parent)
         self.folder_path = None
         self.folder_name = None
+        self.thread_pool = QThreadPool()
+        # Limit threads to avoid disk thrashing
+        self.thread_pool.setMaxThreadCount(4) 
+        self.active_thumbnails = {}  # path -> widget
+        
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.init_ui()
 
@@ -762,9 +813,39 @@ class FolderView(QWidget):
 
         self.scroll_area.setWidget(self.grid_widget)
         layout.addWidget(self.scroll_area, stretch=1)
+        
+        # Connect scroll signal for lazy loading
+        # Check on scroll
+        self.scroll_area.verticalScrollBar().valueChanged.connect(self.check_scroll_position)
+        # Check when range changes (e.g. window resize or content added)
+        self.scroll_area.verticalScrollBar().rangeChanged.connect(self.check_scroll_range)
+        
+        # Batch loading state
+        self.all_image_paths = []
+        self.loaded_count = 0
+        self.batch_size = 50
+        self.is_loading_batch = False
+
+    def check_scroll_position(self, value):
+        """Load more images when scrolled near bottom."""
+        scrollbar = self.scroll_area.verticalScrollBar()
+        # If we are near the bottom (80%), load more
+        if not self.is_loading_batch and value >= scrollbar.maximum() * 0.8:
+            self.load_next_batch()
+
+    def check_scroll_range(self, min_val, max_val):
+        """Check if we need to load more when content/size changes."""
+        # If scrollbar is missing (max=0) or we are still near bottom, load more
+        if not self.is_loading_batch:
+            current_val = self.scroll_area.verticalScrollBar().value()
+            if max_val <= 0 or current_val >= max_val * 0.8:
+                self.load_next_batch()
 
     def clear_content(self):
         """Immediately clear all thumbnails from the view."""
+        # Cancel pending tasks if possible (though QThreadPool doesn't support easy cancellation)
+        self.active_thumbnails.clear()
+        
         while self.grid_layout.count():
             item = self.grid_layout.takeAt(0)
             widget = item.widget()
@@ -777,11 +858,13 @@ class FolderView(QWidget):
         QApplication.processEvents()
 
     def load_folder(self, folder_path, folder_name):
-        # Clear existing content immediately before loading new content
         self.clear_content()
-
         self.folder_path = folder_path
         self.folder_name = folder_name
+        
+        # Reset batch state
+        self.all_image_paths = []
+        self.loaded_count = 0
 
         # Set display name
         display_name = folder_name
@@ -795,29 +878,70 @@ class FolderView(QWidget):
 
         self.name_input.setText(display_name)
 
-        # Load images
-        images = []
-        for f in os.listdir(folder_path):
-            if f.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp')):
-                if not f.endswith('_representative_face.jpg'):
-                    images.append(os.path.join(folder_path, f))
+        # 1. Fast List: Get all file paths instantly
+        try:
+            for f in os.listdir(folder_path):
+                if f.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp')):
+                    if not f.endswith('_representative_face.jpg'):
+                        self.all_image_paths.append(os.path.join(folder_path, f))
+        except Exception:
+            pass
 
-        self.image_count_label.setText(f"{len(images)} photos")
+        self.image_count_label.setText(f"{len(self.all_image_paths)} photos")
+        
+        # 2. Start initial batch
+        self.load_next_batch()
 
-        # FlowLayout handles positioning automatically
-        for img_path in images:
+    def on_thumbnail_ready(self, path, image):
+        """Callback when a background worker finishes resizing an image."""
+        if path in self.active_thumbnails:
+            # This is safe because signals slot into the UI thread automatically
+            self.active_thumbnails[path].set_image(image)
+
+    def load_next_batch(self):
+        """Load the next batch of images."""
+        if self.loaded_count >= len(self.all_image_paths):
+            return
+            
+        self.is_loading_batch = True
+        
+        end_index = min(self.loaded_count + self.batch_size, len(self.all_image_paths))
+        batch_paths = self.all_image_paths[self.loaded_count:end_index]
+        
+        for img_path in batch_paths:
             thumb = ImageThumbnail(img_path)
             thumb.clicked.connect(self.show_image)
             self.grid_layout.addWidget(thumb)
+            self.active_thumbnails[img_path] = thumb
+            
+            # Queue Worker: Start background loading immediately
+            worker = ThumbnailWorker(img_path)
+            worker.signals.result.connect(self.on_thumbnail_ready)
+            self.thread_pool.start(worker)
+            
+        self.loaded_count = end_index
+        self.is_loading_batch = False
 
-        # Force layout update for FlowLayout
+        # Force layout update
         self.grid_layout.invalidate()
         self.grid_widget.adjustSize()
         self.grid_widget.updateGeometry()
+        
+        # Check if we need to load more immediately (if screen isn't full)
+        # We use a timer to allow the layout to actually update/repaint first
+        QTimer.singleShot(50, lambda: self.check_scroll_range(0, self.scroll_area.verticalScrollBar().maximum()))
 
     def show_image(self, image_path):
-        viewer = ImageViewer(image_path, self)
-        viewer.exec()
+        # Open in default OS viewer
+        try:
+            if sys.platform == "win32":
+                os.startfile(image_path)
+            elif sys.platform == "darwin":
+                os.system(f'open "{image_path}"')
+            else:
+                os.system(f'xdg-open "{image_path}"')
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Could not open image: {str(e)}")
 
     def rename_folder(self):
         if not self.folder_path:
@@ -1674,8 +1798,8 @@ class MainView(QWidget):
                 # Count images in this folder
                 image_count = self.count_folder_images(folder_path)
 
-                # Only include folders with more than 1 photo
-                if image_count > 1:
+                # Only include folders with more than 1 photo, or group photos if any exist
+                if image_count > 1 or (item == "all_group_photos" and image_count > 0):
                     if item.startswith("rename_") or item == "all_group_photos":
                         folders.append((item, folder_path, image_count))
                     elif not item.endswith('.pkl') and not item.endswith('.txt'):

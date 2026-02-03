@@ -74,7 +74,6 @@ def initialize_face_analyzer(det_size=(640, 640)):
         raise ImportError("InsightFace not installed. Please install with: pip install insightface onnxruntime-gpu")
 
     # Fix tqdm compatibility issue when stdout/stderr is None (common in GUI apps)
-    # This prevents "NoneType has no attribute 'write'" errors during model downloads
     if sys.stdout is None or sys.stderr is None:
         try:
             import tqdm.std
@@ -307,9 +306,9 @@ def filter_faces(faces, image, img_area, min_face_size=80, min_confidence=0.8,
 # ============================================================================
 
 def detect_and_embed_faces(input_folder, output_folder,
-                           min_face_size=80, min_confidence=0.8,
-                           min_face_ratio=0.01, foreground_ratio_threshold=0.1,
-                           blur_threshold=60, batch_size=8, max_workers=4,
+                           min_face_size=50, min_confidence=0.7,
+                           min_face_ratio=0.005, foreground_ratio_threshold=0.05,
+                           blur_threshold=50, batch_size=8, max_workers=4,
                            progress_callback=None):
     """
     Unified face detection and embedding using InsightFace.
@@ -328,7 +327,7 @@ def detect_and_embed_faces(input_folder, output_folder,
         progress_callback: Optional callback(current, total, message)
 
     Returns:
-        dict: Face embeddings dictionary {face_path: embedding}
+        dict: Face embeddings dictionary {face_path: {'embedding': emb, 'source_path': original_path}}
     """
     os.makedirs(output_folder, exist_ok=True)
 
@@ -336,13 +335,25 @@ def detect_and_embed_faces(input_folder, output_folder,
     print("Initializing face detection model...")
     app = initialize_face_analyzer()
 
-    # Get all image files
-    valid_extensions = ['.jpg', '.jpeg', '.png', '.bmp']
-    image_files = [
-        os.path.join(input_folder, f) for f in os.listdir(input_folder)
-        if os.path.isfile(os.path.join(input_folder, f))
-        and Path(f).suffix.lower() in valid_extensions
-    ]
+    # Get all image files (Recursive)
+    valid_extensions = {'.jpg', '.jpeg', '.png', '.bmp'}
+    image_files = []
+    
+    # Folders to exclude
+    excluded_dirs = {'face_detection_output', 'all_images_processed', '__pycache__', '.git'}
+    
+    print(f"Scanning folder: {input_folder} (recursive)")
+    
+    for root, dirs, files in os.walk(input_folder):
+        # Exclude directories in-place
+        dirs[:] = [d for d in dirs if d not in excluded_dirs and not d.startswith('.')]
+        
+        for f in files:
+            if Path(f).suffix.lower() in valid_extensions:
+                # Skip representative faces if re-scanning output
+                if "_representative_face" in f:
+                    continue
+                image_files.append(os.path.join(root, f))
 
     total_images = len(image_files)
     print(f"Found {total_images} images to process")
@@ -364,15 +375,22 @@ def detect_and_embed_faces(input_folder, output_folder,
         # Process each image in the batch
         for img_path, (processed_img, original_img, scale) in loaded_images.items():
             img_file = os.path.basename(img_path)
-            image_name = Path(img_file).stem
+            # Create unique ID for this image based on path hash or relative path to handle duplicates in subfolders
+            # We'll stick to a simple strategy: unique subfolder in output per processed image
+            # But wait, we need face crops to be saved somewhere for representative face generation.
+            
+            # Simple hash for folder name to avoid collisions
+            import hashlib
+            rel_path_hash = hashlib.md5(img_path.encode('utf-8')).hexdigest()[:8]
+            image_name = f"{Path(img_file).stem}_{rel_path_hash}"
 
-            # Create output folder for this image
+            # Create output folder for this image's faces
             image_output_folder = os.path.join(output_folder, image_name)
             os.makedirs(image_output_folder, exist_ok=True)
 
-            # Save original image
-            original_output_path = os.path.join(image_output_folder, "original_" + img_file)
-            cv2.imwrite(original_output_path, original_img)
+            # NOTE: We NO LONGER save the full original image here to save space!
+            # original_output_path = os.path.join(image_output_folder, "original_" + img_file)
+            # cv2.imwrite(original_output_path, original_img)
 
             # Get image dimensions
             h, w = original_img.shape[:2]
@@ -384,6 +402,11 @@ def detect_and_embed_faces(input_folder, output_folder,
             faces = app.get(img_rgb)
 
             if not faces:
+                # Clean up empty folder if created
+                try:
+                    os.rmdir(image_output_folder)
+                except:
+                    pass
                 print(f"No faces detected in {img_file}")
                 processed_count += 1
                 continue
@@ -422,13 +445,17 @@ def detect_and_embed_faces(input_folder, output_folder,
 
                 face_img = original_img[crop_y1:crop_y2, crop_x1:crop_x2]
 
-                # Save face crop
+                # Save face crop (still needed for UI thumbnails/representative faces)
                 face_filename = f"face_{i + 1}_{img_file}"
                 face_output_path = os.path.join(image_output_folder, face_filename)
                 cv2.imwrite(face_output_path, face_img)
 
-                # Store embedding directly (no second detection pass!)
-                embeddings_dict[face_output_path] = face_info["embedding"]
+                # Store embedding AND source path in metadata
+                # We store the source path so we can copy it later without duplicating now
+                embeddings_dict[face_output_path] = {
+                    'embedding': face_info["embedding"],
+                    'source_path': img_path
+                }
 
             processed_count += 1
 
@@ -488,14 +515,15 @@ def create_face_embeddings(output_folder):
 # Person Grouping and Organization
 # ============================================================================
 
-def reorganize_by_person(output_folder, similarity_threshold=0.55, max_profile_angle=45, session_id=None):
+def reorganize_by_person(output_folder, input_folder=None, similarity_threshold=0.55, max_profile_angle=45, session_id=None):
     """
     Reorganizes the photos by person based on face embeddings from InsightFace.
     Uses improved handling for profile/side faces.
     Creates a special folder for group photos with more than 3 people.
-
+    
     Args:
-        output_folder (str): Path to the folder containing organized face images
+        output_folder (str): Path to the temp folder containing face crops/embeddings
+        input_folder (str): Path to original input folder (where output will be created)
         similarity_threshold (float): Similarity threshold for matching faces (0-1)
         max_profile_angle (float): Maximum head pose angle to consider as same person
         session_id (str): Session ID to organize files under
@@ -519,9 +547,17 @@ def reorganize_by_person(output_folder, similarity_threshold=0.55, max_profile_a
         print("No embeddings found")
         return {}, ""
 
+    # Check data format (handle legacy vs new format)
+    first_val = next(iter(embeddings_dict.values()))
+    is_new_format = isinstance(first_val, dict) and 'embedding' in first_val
+
     # Extract face paths and embeddings
     face_paths = list(embeddings_dict.keys())
-    face_embeddings = np.array(list(embeddings_dict.values()))
+    
+    if is_new_format:
+        face_embeddings = np.array([v['embedding'] for v in embeddings_dict.values()])
+    else:
+        face_embeddings = np.array(list(embeddings_dict.values()))
 
     # Create a persons dictionary
     persons = {}  # person_id -> [face_paths]
@@ -536,7 +572,11 @@ def reorganize_by_person(output_folder, similarity_threshold=0.55, max_profile_a
         best_match_id = None
 
         for person_id, person_faces in persons.items():
-            person_embeddings = np.array([embeddings_dict[f] for f in person_faces])
+            # Extract embeddings for this person
+            if is_new_format:
+                person_embeddings = np.array([embeddings_dict[f]['embedding'] for f in person_faces])
+            else:
+                person_embeddings = np.array([embeddings_dict[f] for f in person_faces])
 
             embedding_norm = embedding / np.linalg.norm(embedding)
             person_embeddings_norm = person_embeddings / np.linalg.norm(person_embeddings, axis=1, keepdims=True)
@@ -596,11 +636,19 @@ def reorganize_by_person(output_folder, similarity_threshold=0.55, max_profile_a
 
                 max_sim = 0
                 for small_face in small_faces:
-                    small_emb = embeddings_dict[small_face]
+                    if is_new_format:
+                        small_emb = embeddings_dict[small_face]['embedding']
+                    else:
+                        small_emb = embeddings_dict[small_face]
+                        
                     small_emb_norm = small_emb / np.linalg.norm(small_emb)
 
                     for large_face in large_faces:
-                        large_emb = embeddings_dict[large_face]
+                        if is_new_format:
+                            large_emb = embeddings_dict[large_face]['embedding']
+                        else:
+                            large_emb = embeddings_dict[large_face]
+                            
                         large_emb_norm = large_emb / np.linalg.norm(large_emb)
 
                         sim = np.dot(small_emb_norm, large_emb_norm)
@@ -620,17 +668,27 @@ def reorganize_by_person(output_folder, similarity_threshold=0.55, max_profile_a
 
     # Map face paths to original images
     face_to_original = {}
-    for face_path in face_paths:
-        image_folder = os.path.dirname(face_path)
-        original_files = glob(os.path.join(image_folder, "original_*"))
-        if original_files:
-            face_to_original[face_path] = original_files[0]
+    
+    if is_new_format:
+        # Fast path: use metadata
+        for face_path in face_paths:
+            face_to_original[face_path] = embeddings_dict[face_path]['source_path']
+    else:
+        # Legacy path: look for files
+        for face_path in face_paths:
+            image_folder = os.path.dirname(face_path)
+            original_files = glob(os.path.join(image_folder, "original_*"))
+            if original_files:
+                face_to_original[face_path] = original_files[0]
 
     # Create output directory
+    # If input_folder provided, put results there. Else fallback to CWD.
+    base_dir = input_folder if input_folder else "."
+    
     if session_id:
-        processed_folder = os.path.join("all_images_processed", session_id)
+        processed_folder = os.path.join(base_dir, "all_images_processed", session_id)
     else:
-        processed_folder = "all_images_processed"
+        processed_folder = os.path.join(base_dir, "all_images_processed")
 
     os.makedirs(processed_folder, exist_ok=True)
 
@@ -638,15 +696,14 @@ def reorganize_by_person(output_folder, similarity_threshold=0.55, max_profile_a
     group_photos_folder = os.path.join(processed_folder, "all_group_photos")
     os.makedirs(group_photos_folder, exist_ok=True)
 
-    # Track images with multiple people
-    images_to_people = defaultdict(set)
-    for person_id, person_face_paths in persons.items():
-        for face_path in person_face_paths:
-            if face_path in face_to_original:
-                images_to_people[face_to_original[face_path]].add(person_id)
+    # Track images with multiple people (based on face count, not just unique identities)
+    image_face_counts = defaultdict(int)
+    for face_path in face_paths:
+        if face_path in face_to_original:
+            image_face_counts[face_to_original[face_path]] += 1
 
-    group_photos = {img_path: people for img_path, people in images_to_people.items() if len(people) > 3}
-    print(f"Found {len(group_photos)} images with more than 3 people")
+    group_photos = {img_path: count for img_path, count in image_face_counts.items() if count > 3}
+    print(f"Found {len(group_photos)} images with more than 3 detected faces")
 
     # Create person folders and copy images
     persons_to_originals = {}
@@ -664,21 +721,26 @@ def reorganize_by_person(output_folder, similarity_threshold=0.55, max_profile_a
 
         # Representative face
         if person_face_paths:
-            face_scores = {}
-            for fp in person_face_paths:
-                image_folder = os.path.dirname(fp)
-                face_count = len(glob(os.path.join(image_folder, "face_*")))
-                face_scores[fp] = face_count
-
-            rep_face_path = max(person_face_paths, key=lambda f: face_scores.get(f, 0))
-            rep_face_dest = os.path.join(person_folder, f"{person_id}_representative_face.jpg")
-            shutil.copy2(rep_face_path, rep_face_dest)
+            # We want the biggest/best face for the thumbnail
+            # We can use file size of the crop as a proxy for quality/size
+            try:
+                rep_face_path = max(person_face_paths, key=lambda f: os.path.getsize(f))
+                rep_face_dest = os.path.join(person_folder, f"{person_id}_representative_face.jpg")
+                shutil.copy2(rep_face_path, rep_face_dest)
+            except Exception as e:
+                print(f"Error creating representative face: {e}")
 
         # Copy original images
         for original_path in original_paths:
             original_name = os.path.basename(original_path)
             destination = os.path.join(person_folder, original_name)
-            shutil.copy2(original_path, destination)
+            
+            # Avoid overwriting if multiple people in same folder structure (though we used unique IDs)
+            # Just copy
+            try:
+                shutil.copy2(original_path, destination)
+            except Exception as e:
+                print(f"Error copying {original_path}: {e}")
 
         print(f"Copied {len(original_paths)} images to folder {person_id}")
 
@@ -686,12 +748,15 @@ def reorganize_by_person(output_folder, similarity_threshold=0.55, max_profile_a
     group_readme_path = os.path.join(group_photos_folder, "README.txt")
     with open(group_readme_path, "w") as f:
         f.write("GROUP PHOTOS\n=============\n\n")
-        f.write("This folder contains photos where more than 3 people were detected.\n")
+        f.write("This folder contains photos where more than 3 faces were detected.\n")
 
-    for original_path, person_ids in group_photos.items():
+    for original_path in group_photos.keys():
         original_name = os.path.basename(original_path)
         destination = os.path.join(group_photos_folder, original_name)
-        shutil.copy2(original_path, destination)
+        try:
+            shutil.copy2(original_path, destination)
+        except Exception as e:
+            print(f"Error copying group photo {original_path}: {e}")
 
     # Save metadata
     persons_file = os.path.join(processed_folder, "persons_to_originals.pkl")
@@ -715,6 +780,8 @@ def reorganize_by_person(output_folder, similarity_threshold=0.55, max_profile_a
 def clean_filenames(processed_folder, session_id=None):
     """
     Removes the 'original_' prefix from all filenames in the organized folders.
+    (Legacy function: mostly unused now as we don't add prefix anymore, 
+    but kept for backward compatibility with old outputs)
     """
     if session_id:
         target_path = os.path.join(processed_folder, session_id)
@@ -790,10 +857,10 @@ def main():
     )
 
     # Reorganize by person
-    reorganize_by_person(output_folder, similarity_threshold=0.5)
+    reorganize_by_person(output_folder, input_folder=input_folder, similarity_threshold=0.5)
 
     # Clean up filenames
-    clean_filenames("all_images_processed")
+    clean_filenames(os.path.join(input_folder, "all_images_processed"))
 
 
 if __name__ == "__main__":
