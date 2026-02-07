@@ -65,6 +65,11 @@ def build_single_exe():
     print("This may take 5-10 minutes due to large dependencies...")
     print()
 
+    icon_path = os.path.join(script_dir, "logo.ico")
+    icon_arg = f"--icon={icon_path}" if os.path.exists(icon_path) else None
+    if not icon_arg:
+        print("WARNING: logo.ico not found - falling back to default PyInstaller icon.")
+
     # PyInstaller command for single file
     cmd = [
         sys.executable, "-m", "PyInstaller",
@@ -72,6 +77,12 @@ def build_single_exe():
         "--onefile",  # Single .exe file - no _internal folder needed
         "--windowed",  # No console window
         "--noconfirm",  # Replace output without asking
+    ]
+
+    if icon_arg:
+        cmd.append(icon_arg)
+
+    cmd += [
 
         # Hidden imports that PyInstaller might miss
         "--hidden-import=PIL",
@@ -107,6 +118,7 @@ def build_single_exe():
 
         # Include the processing module
         "--add-data=processphotos.py;.",
+        "--add-data=logo.png;.",
 
         # Main script
         "photo_organizer.py"
@@ -198,6 +210,11 @@ def build_folder_version():
 
     check_pyinstaller()
 
+    icon_path = os.path.join(script_dir, "logo.ico")
+    icon_arg = f"--icon={icon_path}" if os.path.exists(icon_path) else None
+    if not icon_arg:
+        print("WARNING: logo.ico not found - falling back to default PyInstaller icon.")
+
     for folder in ['build', 'dist']:
         if os.path.exists(folder):
             shutil.rmtree(folder)
@@ -208,6 +225,13 @@ def build_folder_version():
         "--onedir",  # Folder with exe + _internal
         "--windowed",
         "--noconfirm",
+
+    ]
+
+    if icon_arg:
+        cmd.append(icon_arg)
+
+    cmd += [
 
         "--hidden-import=PIL",
         "--hidden-import=cv2",
@@ -225,6 +249,7 @@ def build_folder_version():
         "--collect-all=cv2",
 
         "--add-data=processphotos.py;.",
+        "--add-data=logo.png;.",
 
         "photo_organizer.py"
     ]

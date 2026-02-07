@@ -1,8 +1,14 @@
 # Sort Moments
 
+![Sort Moments logo](logo.png)
+
 **Organize your photos by faces using AI**
 
 A free, open-source desktop application that automatically groups your photos by the people in them using advanced face detection and recognition.
+
+<video src="demo_video.mp4" controls width="640">
+Your browser does not support the video tag.
+</video>
 
 [Download](https://sortmoments.com) | [Website](https://sortmoments.com) | [Report Issues](https://github.com/DarthAmk97/SortMoments/issues)
 

@@ -2037,6 +2037,14 @@ def main():
     app.setStyle("Fusion")
     app.setStyleSheet(STYLESHEET)
 
+    def resource_path(relative_path: str) -> Path:
+        base_path = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
+        return base_path / relative_path
+
+    icon_path = resource_path("logo.png")
+    if icon_path.exists():
+        app.setWindowIcon(QIcon(str(icon_path)))
+
     palette = QPalette()
     palette.setColor(QPalette.ColorRole.Window, QColor(COLORS['bg_primary']))
     palette.setColor(QPalette.ColorRole.WindowText, QColor(COLORS['text_primary']))
@@ -2048,6 +2056,8 @@ def main():
     app.setPalette(palette)
 
     window = SortMomentsApp()
+    if icon_path.exists():
+        window.setWindowIcon(QIcon(str(icon_path)))
     window.show()
 
     sys.exit(app.exec())

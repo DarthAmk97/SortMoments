@@ -79,6 +79,15 @@ nav {
     gap: 0.75rem;
 }
 
+.logo-image {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    object-fit: contain;
+    box-shadow: 0 0 0 1px var(--border), 0 10px 30px rgba(0, 0, 0, 0.35);
+    background: var(--bg-secondary);
+}
+
 .logo-icon {
     background: linear-gradient(135deg, var(--accent), var(--success));
     color: white;
@@ -603,6 +612,11 @@ footer {
 
     .logo-text {
         font-size: 1.1rem;
+    }
+
+    .logo-image {
+        width: 32px;
+        height: 32px;
     }
 
     .logo-icon {
