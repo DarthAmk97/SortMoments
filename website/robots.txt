@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /__pycache__/
+
+Sitemap: https://sortmoments.com/sitemap.xml
