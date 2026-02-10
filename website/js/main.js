@@ -99,9 +99,44 @@ async function trackDownload() {
 }
 
 /**
+ * Initialize mobile menu toggle
+ */
+function initMobileMenu() {
+    const menuToggle = document.getElementById('mobileMenuToggle');
+    const navLinks = document.getElementById('navLinks');
+
+    if (!menuToggle || !navLinks) return;
+
+    // Toggle menu on button click
+    menuToggle.addEventListener('click', () => {
+        menuToggle.classList.toggle('active');
+        navLinks.classList.toggle('mobile-open');
+    });
+
+    // Close menu when a link is clicked
+    navLinks.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+            menuToggle.classList.remove('active');
+            navLinks.classList.remove('mobile-open');
+        });
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('nav')) {
+            menuToggle.classList.remove('active');
+            navLinks.classList.remove('mobile-open');
+        }
+    });
+}
+
+/**
  * Initialize the page
  */
 function init() {
+    // Initialize mobile menu
+    initMobileMenu();
+
     // Fetch and display download count
     fetchDownloadCount();
 
