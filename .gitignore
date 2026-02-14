@@ -57,6 +57,32 @@ desktop.ini
 temp/
 tmp/
 
+# Remotion (video renders + caches)
+remotion-ad/
+remotion-ad/node_modules/
+remotion-ad/out/
+remotion-ad/.remotion/
+remotion-ad/.cache/
+remotion-ad/.parcel-cache/
+remotion-ad/.vite/
+remotion-ad/.turbo/
+remotion-ad/**/.DS_Store
+
+# Remotion helper artifacts (frame extraction, QA stills, etc.)
+_extracted_frames/
+remotion-ad/_extracted_frames/
+
+# Source screenshots folder (original captures live outside the Remotion public assets)
+images for remotion/
+
+# Remotion scratch scripts + notes (local-only)
+memory.md
+gen_audio.py
+rebuild_assets_zoom_fix.py
+rebuild_crop.py
+rebuild_inside_crop.py
+rebuild_inside_crop2.py
+
 =1.15.0
 DEPLOYMENT.md
 
