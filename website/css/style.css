@@ -12,6 +12,24 @@
     --success: #10b981;
     --border: #27272a;
     --border-light: #3f3f46;
+
+    /* Type scale */
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --fs-hero: clamp(2.8rem, 5vw, 4.25rem);
+    --fs-subhead: clamp(1.05rem, 1.2vw, 1.25rem);
+    --fs-body: 1.02rem;
+    --fs-small: 0.93rem;
+    --lh-tight: 1.05;
+    --lh-body: 1.65;
+    --ls-tight: -0.02em;
+    --ls-wide: 0.08em;
+
+    /* Surfaces */
+    --radius-card: 16px;
+    --radius-pill: 999px;
+    --border-soft: rgba(255, 255, 255, 0.08);
+    --shadow-soft: 0 1px 0 rgba(255, 255, 255, 0.03), 0 24px 70px rgba(0, 0, 0, 0.45);
+    --shadow-soft-hover: 0 1px 0 rgba(255, 255, 255, 0.05), 0 34px 90px rgba(0, 0, 0, 0.55);
 }
 
 * {
@@ -25,24 +43,65 @@ html {
 }
 
 body {
-    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: var(--font-sans);
     background-color: var(--bg-primary);
     color: var(--text-primary);
-    line-height: 1.6;
+    line-height: var(--lh-body);
+    font-size: var(--fs-body);
     min-height: 100vh;
     position: relative;
     overflow-x: hidden;
 }
 
-/* Particle Background Canvas */
-.particle-background {
+/* Aurora background (CSS-only, replaces particles) */
+.aurora-bg {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(1200px 700px at 18% 18%, rgba(139, 92, 246, 0.20), transparent 60%),
+        radial-gradient(1000px 700px at 82% 26%, rgba(16, 185, 129, 0.14), transparent 58%),
+        radial-gradient(900px 600px at 55% 78%, rgba(167, 139, 250, 0.12), transparent 60%),
+        radial-gradient(1200px 900px at 50% 50%, rgba(255, 255, 255, 0.04), transparent 62%);
+    filter: blur(18px) saturate(115%);
+    opacity: 0.95;
+    transform: translateZ(0);
+    animation: auroraDrift 18s ease-in-out infinite alternate;
+}
+
+.aurora-bg::before {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    background:
+        radial-gradient(900px 650px at 30% 70%, rgba(139, 92, 246, 0.14), transparent 60%),
+        radial-gradient(850px 600px at 70% 35%, rgba(16, 185, 129, 0.10), transparent 58%);
+    filter: blur(22px);
+    opacity: 0.75;
+    animation: auroraDrift2 22s ease-in-out infinite alternate;
+}
+
+.aurora-bg::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(1200px 900px at 50% 10%, rgba(0, 0, 0, 0.12), transparent 55%),
+        radial-gradient(1200px 900px at 50% 90%, rgba(0, 0, 0, 0.30), transparent 55%),
+        linear-gradient(to bottom, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.08) 35%, rgba(0, 0, 0, 0.35));
+    opacity: 1;
+}
+
+.aurora-noise {
+    position: fixed;
+    inset: 0;
     z-index: 1;
     pointer-events: none;
+    opacity: 0.06;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
+    background-size: 220px 220px;
 }
 
 header,
@@ -120,7 +179,7 @@ nav {
     border-radius: 8px;
     object-fit: contain;
     box-shadow: 0 0 0 1px var(--border), 0 10px 30px rgba(0, 0, 0, 0.35);
-    background: var(--bg-secondary);
+    background: transparent;
 }
 
 .logo-icon {
@@ -159,7 +218,7 @@ nav {
     color: var(--text-primary);
     background: var(--accent);
     border-color: var(--accent);
-    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(139, 92, 246, 0.20);
 }
 
 /* Mobile Nav Menu */
@@ -213,6 +272,53 @@ nav {
     min-width: 400px;
 }
 
+.hero-title {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    margin-bottom: 0.2rem;
+}
+
+.value-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.55rem 0.9rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-soft);
+    background: rgba(24, 24, 27, 0.55);
+    backdrop-filter: blur(10px);
+    color: rgba(250, 250, 250, 0.78);
+    font-size: 0.72rem;
+    letter-spacing: var(--ls-wide);
+    text-transform: uppercase;
+    margin-bottom: 1.1rem;
+    box-shadow: 0 14px 45px rgba(0, 0, 0, 0.35);
+}
+
+.value-pill .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #d6ccff, var(--accent));
+    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.16);
+}
+
+.value-pill .sep {
+    opacity: 0.55;
+}
+
+.hero-mark {
+    width: 86px;
+    height: 86px;
+    border-radius: 16px;
+    object-fit: contain;
+    /* Avoid "double boxing": let the mark breathe, use a single soft shadow */
+    background: transparent;
+    padding: 0;
+    box-shadow: 0 22px 80px rgba(0, 0, 0, 0.55);
+}
+
 /* Features Sidebar */
 .features-sidebar {
     flex: 0 0 350px;
@@ -231,12 +337,14 @@ nav {
 .features-sidebar .feature {
     text-align: center;
     padding: 1.25rem;
-    background: var(--bg-secondary);
-    border-radius: 12px;
-    border: 1px solid var(--border);
+    background: rgba(24, 24, 27, 0.60);
+    border-radius: var(--radius-card);
+    border: 1px solid var(--border-soft);
     display: flex;
     flex-direction: column;
     align-items: center;
+    box-shadow: var(--shadow-soft);
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
 .features-sidebar .feature-icon {
@@ -251,21 +359,36 @@ nav {
     color: var(--accent);
 }
 
+.features-sidebar .feature:hover,
+.step:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: var(--shadow-soft-hover);
+}
+
 
 .hero h1 {
-    font-size: 4rem;
+    font-size: var(--fs-hero);
     font-weight: 700;
     margin-bottom: 1rem;
-    background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    line-height: var(--lh-tight);
+    letter-spacing: var(--ls-tight);
+    color: rgba(250, 250, 250, 0.96);
+    text-shadow: 0 18px 70px rgba(139, 92, 246, 0.14);
+}
+
+/* ReactBits-inspired "shuffle text" */
+.shuffle-title {
+    letter-spacing: -0.03em;
+    display: inline-block;
+    white-space: nowrap;
 }
 
 .tagline {
-    font-size: 1.5rem;
+    font-size: var(--fs-subhead);
     color: var(--text-secondary);
     margin-bottom: 2rem;
+    white-space: nowrap;
+    max-width: none;
 }
 
 .download-stats {
@@ -315,11 +438,17 @@ nav {
 .btn-primary {
     background: linear-gradient(135deg, var(--success), #059669);
     color: white;
+    box-shadow:
+        0 16px 45px rgba(16, 185, 129, 0.18),
+        0 10px 34px rgba(0, 0, 0, 0.40);
 }
 
 .btn-primary:hover {
     background: linear-gradient(135deg, #34d399, var(--success));
-    transform: translateY(-2px);
+    box-shadow:
+        0 22px 60px rgba(16, 185, 129, 0.24),
+        0 18px 55px rgba(0, 0, 0, 0.52);
+    filter: brightness(1.02);
 }
 
 .btn-secondary {
@@ -333,9 +462,71 @@ nav {
     border-color: var(--text-muted);
 }
 
+.btn-icon {
+    padding: 1rem 1.15rem;
+    min-width: 56px;
+    justify-content: center;
+}
+
+.btn-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.btn-tertiary {
+    background: rgba(24, 24, 27, 0.50);
+    color: rgba(250, 250, 250, 0.92);
+    border: 1px solid var(--border-soft);
+    backdrop-filter: blur(10px);
+}
+
+.btn-tertiary:hover {
+    border-color: rgba(255, 255, 255, 0.14);
+    background: rgba(24, 24, 27, 0.62);
+    box-shadow: 0 18px 55px rgba(0, 0, 0, 0.40);
+}
+
 .platform-note {
     font-size: 0.9rem;
     color: var(--text-muted);
+}
+
+.scroll-cue {
+    margin-top: 1.25rem;
+    display: inline-flex;
+    gap: 0.45rem;
+    align-items: center;
+    color: rgba(250, 250, 250, 0.62);
+    text-decoration: none;
+    font-size: 0.95rem;
+    letter-spacing: -0.01em;
+    transition: color 160ms ease;
+    position: relative;
+}
+
+.scroll-cue:hover {
+    color: rgba(250, 250, 250, 0.86);
+}
+
+.scroll-cue span {
+    display: inline-block;
+    transform: translateY(1px);
+    animation: cueBounce 1.6s ease-in-out infinite;
+}
+
+.scroll-cue::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: -10px;
+    width: 72%;
+    height: 34px;
+    transform: translateX(-50%);
+    background: radial-gradient(closest-side, rgba(139, 92, 246, 0.22), transparent 70%);
+    filter: blur(10px);
+    opacity: 0.9;
+    pointer-events: none;
+    animation: cueGlow 1.8s ease-in-out infinite;
 }
 
 /* Video Section */
@@ -394,11 +585,13 @@ nav {
 .step {
     text-align: left;
     padding: 1.5rem;
-    background: var(--bg-secondary);
-    border-radius: 12px;
-    border: 1px solid var(--border);
+    background: rgba(24, 24, 27, 0.60);
+    border-radius: var(--radius-card);
+    border: 1px solid var(--border-soft);
     display: flex;
     gap: 1.5rem;
+    box-shadow: var(--shadow-soft);
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
 .steps-sidebar .step {
@@ -669,8 +862,19 @@ footer {
         font-size: 2rem;
     }
 
+    .hero-title {
+        gap: 0.65rem;
+    }
+
+    .hero-mark {
+        width: 64px;
+        height: 64px;
+        border-radius: 14px;
+    }
+
     .tagline {
         font-size: 1rem;
+        white-space: normal;
     }
 
     .download-stats {
@@ -685,7 +889,7 @@ footer {
     .cta-buttons {
         flex-direction: column;
         width: 100%;
-        max-width: 280px;
+        max-width: 320px;
         gap: 0.75rem;
     }
 
@@ -866,8 +1070,28 @@ footer {
 /* Download Count */
 .download-count {
     color: var(--text-secondary);
-    font-size: 0.95rem;
+    font-size: var(--fs-small);
     margin: 15px 0;
+}
+
+@keyframes auroraDrift {
+    from { transform: translate3d(-1.5%, -1%, 0) scale(1); }
+    to { transform: translate3d(1.8%, 1.4%, 0) scale(1.02); }
+}
+
+@keyframes auroraDrift2 {
+    from { transform: translate3d(1.2%, -1.6%, 0) scale(1.03); }
+    to { transform: translate3d(-1.6%, 1.1%, 0) scale(1.01); }
+}
+
+@keyframes cueGlow {
+    0%, 100% { opacity: 0.55; transform: translateX(-50%) scale(0.98); }
+    50% { opacity: 0.95; transform: translateX(-50%) scale(1.02); }
+}
+
+@keyframes cueBounce {
+    0%, 100% { transform: translateY(1px); opacity: 0.85; }
+    50% { transform: translateY(5px); opacity: 1; }
 }
 
 #downloadCount {
