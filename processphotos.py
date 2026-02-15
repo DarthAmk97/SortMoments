@@ -19,44 +19,94 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from collections import defaultdict
 import shutil
 import sys
+import platform
 
 
 # ============================================================================
 # GPU Detection and Model Initialization
 # ============================================================================
 
-def get_execution_providers():
+def get_execution_providers(prefer_gpu: bool = True):
     """
-    Detect available execution providers and return them in priority order.
-    DirectML first (works with ANY GPU on Windows), then CUDA, then CPU as fallback.
-    """
-    providers = []
+    Return ONNX Runtime execution providers in priority order, cross-platform.
 
+    Windows:
+      - DirectML (DmlExecutionProvider) if available (works with most GPUs on Windows)
+      - CUDA (CUDAExecutionProvider) if available
+      - CPU
+
+    macOS:
+      - CoreML (CoreMLExecutionProvider) if available
+      - CPU
+
+    Linux:
+      - CUDA if available
+      - CPU
+
+    Notes:
+      - We only append providers that are actually available.
+      - We always include CPU as last fallback.
+    """
     try:
         import onnxruntime as ort
-        available = ort.get_available_providers()
-
-        # Check for DirectML (works with ANY GPU - NVIDIA, AMD, Intel on Windows)
-        if 'DmlExecutionProvider' in available:
-            providers.append('DmlExecutionProvider')
-            print("GPU detected: Using DirectML for acceleration (works with any GPU)")
-        # Fallback to CUDA if available (NVIDIA only)
-        elif 'CUDAExecutionProvider' in available:
-            providers.append('CUDAExecutionProvider')
-            print("GPU detected: Using CUDA for acceleration")
-
-        # Always add CPU as fallback
-        providers.append('CPUExecutionProvider')
-
-        if len(providers) == 1:
-            print("No GPU detected: Using CPU")
-
     except ImportError:
-        providers = ['CPUExecutionProvider']
-        print("ONNX Runtime not found, defaulting to CPU")
+        print("ONNX Runtime not installed, defaulting to CPU.")
+        return ["CPUExecutionProvider"]
+
+    available = ort.get_available_providers()
+    system = platform.system()  # "Windows", "Darwin", "Linux"
+
+    providers = []
+
+    def add_if_available(name: str):
+        if name in available and name not in providers:
+            providers.append(name)
+
+    if not prefer_gpu:
+        return ["CPUExecutionProvider"]
+
+    if system == "Windows":
+        # Best first: DirectML, then CUDA, then CPU
+        add_if_available("DmlExecutionProvider")
+        add_if_available("CUDAExecutionProvider")
+
+        if "DmlExecutionProvider" in providers:
+            print("Using DirectML (Windows GPU acceleration).")
+        elif "CUDAExecutionProvider" in providers:
+            print("Using CUDA (NVIDIA GPU acceleration).")
+        else:
+            print("No GPU provider detected on Windows; using CPU.")
+
+    elif system == "Darwin":
+        # macOS: CoreML (if installed/available), else CPU
+        add_if_available("CoreMLExecutionProvider")
+
+        if "CoreMLExecutionProvider" in providers:
+            print("Using CoreML (macOS acceleration).")
+        else:
+            print("CoreML provider not available on macOS; using CPU.")
+
+    else:
+        # Linux: CUDA if present, else CPU
+        add_if_available("CUDAExecutionProvider")
+
+        if "CUDAExecutionProvider" in providers:
+            print("Using CUDA (Linux NVIDIA GPU acceleration).")
+        else:
+            print("No GPU provider detected on Linux; using CPU.")
+
+    # Always add CPU fallback
+    add_if_available("CPUExecutionProvider")
+
+    # Final sanity: if somehow empty, force CPU
+    if not providers:
+        providers = ["CPUExecutionProvider"]
+
+    # Helpful debug
+    print(f"ONNX Runtime available providers: {available}")
+    print(f"Selected providers (priority order): {providers}")
 
     return providers
-
 
 def initialize_face_analyzer(det_size=(640, 640)):
     """
@@ -104,10 +154,11 @@ def initialize_face_analyzer(det_size=(640, 640)):
             pass
 
     providers = get_execution_providers()
+    use_cpu_only = providers == ["CPUExecutionProvider"]
 
     try:
         app = FaceAnalysis(name="buffalo_l", providers=providers)
-        app.prepare(ctx_id=0, det_size=det_size)
+        app.prepare(ctx_id=-1 if use_cpu_only else 0, det_size=det_size)
         print(f"InsightFace initialized with detection size: {det_size}")
         return app
     except Exception as e:
