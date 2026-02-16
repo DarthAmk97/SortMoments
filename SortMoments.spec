@@ -3,7 +3,7 @@ from PyInstaller.utils.hooks import collect_all
 
 datas = [('processphotos.py', '.'), ('logo.png', '.'), ('logo.icns', '.')]
 binaries = []
-hiddenimports = ['PIL', 'PIL.Image', 'PIL._tkinter_finder', 'cv2', 'numpy', 'numpy.core._methods', 'numpy.lib.format', 'onnxruntime', 'onnxruntime.capi', 'insightface', 'insightface.app', 'insightface.app.face_analysis', 'insightface.model_zoo', 'insightface.model_zoo.model_zoo', 'insightface.utils', 'insightface.utils.face_align', 'sklearn', 'sklearn.cluster', 'sklearn.neighbors', 'scipy', 'scipy.spatial', 'scipy.special', 'albumentations', 'prettytable', 'easydict']
+hiddenimports = ['PIL', 'PIL.Image', 'PIL._tkinter_finder', 'prettytable', 'easydict']
 tmp_ret = collect_all('insightface')
 datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 tmp_ret = collect_all('onnxruntime')
