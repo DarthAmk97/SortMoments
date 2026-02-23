@@ -8,8 +8,8 @@
 
 A free, open-source desktop application that automatically groups your photos by the people in them using advanced face detection and recognition.
 
-<video src="[remotion-ad/out/Marketing-Ad-fixed8-1x1.mp4](https://github.com/user-attachments/assets/5bbb1278-61e0-4640-8178-85bfc3279bf3)" controls width="420">
-Demo
+<video src="https://github.com/user-attachments/assets/5bbb1278-61e0-4640-8178-85bfc3279bf3" controls width="420">
+  Demo
 </video>
 
 
