@@ -1,12 +1,14 @@
 # Sort Moments
 
-![Sort Moments logo](logo.png)
+<p align="center">
+  <img src="sortmoments_logo_transparent.png" alt="Sort Moments transparent logo" width="260" />
+</p>
 
 **Organize your photos by faces using AI**
 
 A free, open-source desktop application that automatically groups your photos by the people in them using advanced face detection and recognition.
 
-<video src="demo_video.mp4" controls width="640">
+<video src="remotion-ad/out/Marketing-Ad-fixed8-1x1.mp4" controls width="420">
 Your browser does not support the video tag.
 </video>
 
