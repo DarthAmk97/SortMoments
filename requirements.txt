@@ -9,7 +9,12 @@ insightface>=0.7.0
 
 # ONNX Runtime with DirectML - works with ANY GPU (NVIDIA, AMD, Intel) on Windows
 # No CUDA installation required!
-onnxruntime-directml>=1.15.0
+# Windows (DirectML)
+onnxruntime-directml>=1.15.0 ; platform_system == "Windows"
+
+# macOS/Linux CPU fallback
+onnxruntime>=1.15.0 ; platform_system != "Windows"
 
 # Build dependencies (optional - only needed to create executable)
 # pyinstaller>=5.0
+
