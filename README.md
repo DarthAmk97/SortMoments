@@ -50,6 +50,10 @@ python -m venv venv
 venv\Scripts\activate  # Windows
 # source venv/bin/activate  # macOS/Linux
 
+# For macOS users: Install libheif for HEIC/HEIF image support
+# If you don't have Homebrew, install it from https://brew.sh/
+# brew install libheif
+
 # Install dependencies
 pip install -r requirements.txt
 

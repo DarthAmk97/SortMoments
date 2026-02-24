@@ -24,6 +24,61 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QTimer, QRect, QPoint, QRunnable, QThreadPool, QObject
 from PyQt6.QtGui import QPixmap, QFont, QColor, QPalette, QIcon, QCursor, QImage
+from PIL import Image
+import pillow_heif
+from pillow_heif import register_heif_opener # Explicit import
+import io # To handle in-memory image conversion
+
+
+# Call this once at the top level to register HEIF opener
+register_heif_opener()
+
+# Helper function to load any image type into QImage
+def _load_image_into_qimage(image_path, target_width=None, target_height=None):
+    """
+    Loads an image (including HEIC/HEIF) from path into a QImage.
+    Handles HEIC/HEIF by converting via Pillow.
+    Optionally resizes the image while preserving aspect ratio.
+    """
+    file_extension = Path(image_path).suffix.lower()
+
+    try:
+        if file_extension in {'.heic', '.heif'}:
+            pil_img = Image.open(image_path)
+            # Ensure RGB/RGBA mode for QImage
+            if pil_img.mode in ("RGBA", "P"):
+                pil_img = pil_img.convert("RGBA")
+            else:
+                pil_img = pil_img.convert("RGB")
+
+            # Convert PIL Image to QImage
+            # Use QImage.Format_RGBA8888 for RGBA, Format_RGB888 for RGB
+            format = QImage.Format.Format_RGBA8888 if pil_img.mode == "RGBA" else QImage.Format.Format_RGB888
+
+            q_image = QImage(pil_img.tobytes(), pil_img.size[0], pil_img.size[1], format)
+            q_image = q_image.copy() # Crucial to ensure QImage owns its data
+
+
+        else:
+            # For non-HEIC, use QImage's native loader
+            q_image = QImage(image_path)
+
+        if q_image.isNull():
+            APP_LOGGER.warning(f"QImage failed to load image: {image_path}")
+            return QImage() # Return null QImage on error
+
+        # Apply resizing if requested
+        if target_width is not None and target_height is not None:
+            return q_image.scaled(target_width, target_height,
+                                  Qt.AspectRatioMode.KeepAspectRatio,
+                                  Qt.TransformationMode.SmoothTransformation)
+        return q_image
+
+    except Exception as e:
+        APP_LOGGER.error(f"Failed to load image {image_path} into QImage: {e}")
+        return QImage() # Return null QImage on error
+
+
 
 # Import the processing functions
 try:
@@ -229,32 +284,31 @@ class WorkerSignals(QObject):
 
 class ThumbnailWorker(QRunnable):
     """Worker to load and resize images in a background thread."""
-    
+
     def __init__(self, image_path):
         super().__init__()
         self.image_path = image_path
         self.signals = WorkerSignals()
-        
+
     def run(self):
         try:
-            # Load image into QImage (thread-safe, unlike QPixmap)
-            image = QImage(self.image_path)
+            # Load image using the helper, targeting 160x160 for initial scaling
+            image = _load_image_into_qimage(self.image_path, target_width=160, target_height=160)
+
             if not image.isNull():
-                # Resize here in the background thread!
-                # Target size is 160x160 (thumbnail widget size)
-                # Using FastTransformation for speed, or SmoothTransformation for quality
-                scaled = image.scaled(
-                    160, 160,
-                    Qt.AspectRatioMode.KeepAspectRatioByExpanding,
-                    Qt.TransformationMode.SmoothTransformation
-                )
-                
-                # Crop center
-                x = (scaled.width() - 160) // 2
-                y = (scaled.height() - 160) // 2
-                cropped = scaled.copy(x, y, 160, 160)
-                
+                # Crop center (already scaled by helper, now crop to square)
+                # The helper scales to fit within 160x160 while maintaining aspect ratio
+                # So here we expand to fill and then crop
+                scaled_to_fill = image.scaled(160, 160,
+                                             Qt.AspectRatioMode.KeepAspectRatioByExpanding,
+                                             Qt.TransformationMode.SmoothTransformation)
+
+                x = (scaled_to_fill.width() - 160) // 2
+                y = (scaled_to_fill.height() - 160) // 2
+                cropped = scaled_to_fill.copy(x, y, 160, 160)
+
                 self.signals.result.emit(self.image_path, cropped)
+
         except Exception:
             pass
 
@@ -642,8 +696,12 @@ class ImageViewer(QDialog):
 
         self.image_label = QLabel()
         self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        pixmap = QPixmap(image_path)
-        if not pixmap.isNull():
+
+        # Load image using the helper function
+        q_image = _load_image_into_qimage(image_path)
+
+        if not q_image.isNull():
+            pixmap = QPixmap.fromImage(q_image)
             scaled = pixmap.scaled(
                 self.width() - 40, self.height() - 100,
                 Qt.AspectRatioMode.KeepAspectRatio,
@@ -686,7 +744,7 @@ class ImageThumbnail(QFrame):
         self.thumb_label = QLabel()
         self.thumb_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.thumb_label.setStyleSheet("border-radius: 10px;")
-        
+
         # Start with placeholder
         self.thumb_label.setText("Loading...")
         self.thumb_label.setStyleSheet(f"color: {COLORS['text_muted']};")
@@ -718,9 +776,9 @@ class FolderView(QWidget):
         self.folder_name = None
         self.thread_pool = QThreadPool()
         # Limit threads to avoid disk thrashing
-        self.thread_pool.setMaxThreadCount(4) 
+        self.thread_pool.setMaxThreadCount(4)
         self.active_thumbnails = {}  # path -> widget
-        
+
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.init_ui()
 
@@ -813,13 +871,13 @@ class FolderView(QWidget):
 
         self.scroll_area.setWidget(self.grid_widget)
         layout.addWidget(self.scroll_area, stretch=1)
-        
+
         # Connect scroll signal for lazy loading
         # Check on scroll
         self.scroll_area.verticalScrollBar().valueChanged.connect(self.check_scroll_position)
         # Check when range changes (e.g. window resize or content added)
         self.scroll_area.verticalScrollBar().rangeChanged.connect(self.check_scroll_range)
-        
+
         # Batch loading state
         self.all_image_paths = []
         self.loaded_count = 0
@@ -845,7 +903,7 @@ class FolderView(QWidget):
         """Immediately clear all thumbnails from the view."""
         # Cancel pending tasks if possible (though QThreadPool doesn't support easy cancellation)
         self.active_thumbnails.clear()
-        
+
         while self.grid_layout.count():
             item = self.grid_layout.takeAt(0)
             widget = item.widget()
@@ -861,7 +919,7 @@ class FolderView(QWidget):
         self.clear_content()
         self.folder_path = folder_path
         self.folder_name = folder_name
-        
+
         # Reset batch state
         self.all_image_paths = []
         self.loaded_count = 0
@@ -881,14 +939,14 @@ class FolderView(QWidget):
         # 1. Fast List: Get all file paths instantly
         try:
             for f in os.listdir(folder_path):
-                if f.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp')):
+                if f.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp', '.heic', '.heif')):
                     if not f.endswith('_representative_face.jpg'):
                         self.all_image_paths.append(os.path.join(folder_path, f))
         except Exception:
             pass
 
         self.image_count_label.setText(f"{len(self.all_image_paths)} photos")
-        
+
         # 2. Start initial batch
         self.load_next_batch()
 
@@ -902,23 +960,23 @@ class FolderView(QWidget):
         """Load the next batch of images."""
         if self.loaded_count >= len(self.all_image_paths):
             return
-            
+
         self.is_loading_batch = True
-        
+
         end_index = min(self.loaded_count + self.batch_size, len(self.all_image_paths))
         batch_paths = self.all_image_paths[self.loaded_count:end_index]
-        
+
         for img_path in batch_paths:
             thumb = ImageThumbnail(img_path)
             thumb.clicked.connect(self.show_image)
             self.grid_layout.addWidget(thumb)
             self.active_thumbnails[img_path] = thumb
-            
+
             # Queue Worker: Start background loading immediately
             worker = ThumbnailWorker(img_path)
             worker.signals.result.connect(self.on_thumbnail_ready)
             self.thread_pool.start(worker)
-            
+
         self.loaded_count = end_index
         self.is_loading_batch = False
 
@@ -926,7 +984,7 @@ class FolderView(QWidget):
         self.grid_layout.invalidate()
         self.grid_widget.adjustSize()
         self.grid_widget.updateGeometry()
-        
+
         # Check if we need to load more immediately (if screen isn't full)
         # We use a timer to allow the layout to actually update/repaint first
         QTimer.singleShot(50, lambda: self.check_scroll_range(0, self.scroll_area.verticalScrollBar().maximum()))
@@ -1095,14 +1153,18 @@ class PersonCard(QFrame):
 
         pixmap = None
         if os.path.exists(rep_face_path):
-            pixmap = QPixmap(rep_face_path)
+            q_image = _load_image_into_qimage(rep_face_path)
+            if not q_image.isNull():
+                pixmap = QPixmap.fromImage(q_image)
 
         if pixmap is None or pixmap.isNull():
             for f in os.listdir(self.folder_path):
-                if f.lower().endswith(('.jpg', '.jpeg', '.png')):
-                    pixmap = QPixmap(os.path.join(self.folder_path, f))
-                    if not pixmap.isNull():
-                        break
+                if f.lower().endswith(('.jpg', '.jpeg', '.png', '.heic', '.heif')):
+                    q_image = _load_image_into_qimage(os.path.join(self.folder_path, f))
+                    if not q_image.isNull():
+                        pixmap = QPixmap.fromImage(q_image)
+                        if not pixmap.isNull():
+                            break
 
         if pixmap and not pixmap.isNull():
             scaled = pixmap.scaled(
@@ -1566,7 +1628,7 @@ class MainView(QWidget):
         self.input_folder_changed.emit(folder)
 
     def count_images(self, folder):
-        valid_extensions = ['.jpg', '.jpeg', '.png', '.bmp']
+        valid_extensions = ['.jpg', '.jpeg', '.png', '.bmp', '.heic', '.heif']
         count = 0
         try:
             for f in os.listdir(folder):
@@ -1582,7 +1644,7 @@ class MainView(QWidget):
         count = 0
         try:
             for f in os.listdir(folder_path):
-                if f.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp')):
+                if f.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp', '.heic', '.heif')):
                     if not f.endswith('_representative_face.jpg'):
                         count += 1
         except Exception:

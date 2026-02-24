@@ -3,6 +3,7 @@ PyQt6>=6.4.0
 opencv-python>=4.7.0
 numpy>=1.21.0
 Pillow>=9.0.0
+Pillow-Heif>=0.4.0
 
 # Face detection and recognition (InsightFace unified pipeline)
 insightface>=0.7.0
