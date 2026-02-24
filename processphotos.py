@@ -175,6 +175,7 @@ def initialize_face_analyzer(det_size=(640, 640)):
 def load_image(image_path, max_size=1920):
     """
     Load and optionally downsample an image for processing.
+    Supports HEIC/HEIF files using Pillow.
 
     Args:
         image_path: Path to the image file
@@ -183,7 +184,32 @@ def load_image(image_path, max_size=1920):
     Returns:
         tuple: (image_bgr, original_image_bgr, scale_factor)
     """
-    img = cv2.imread(image_path)
+    img = None
+    original = None
+    scale = 1.0
+
+    file_extension = Path(image_path).suffix.lower()
+
+    if file_extension in {'.heic', '.heif'}:
+        try:
+            from PIL import Image
+            import pillow_heif # noqa: F401 - Imported for its side effects (registering HEIF opener)
+            from pillow_heif import register_heif_opener
+            register_heif_opener()
+
+            pil_img = Image.open(image_path)
+            pil_img = pil_img.convert("RGB") # Convert to RGB as OpenCV expects 3 channels
+            img = np.array(pil_img) # Convert PIL image to numpy array
+            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR) # Convert RGB to BGR for OpenCV
+        except ImportError:
+            print(f"Pillow-Heif not installed. Cannot process HEIC/HEIF file: {image_path}. Please install with: pip install Pillow-Heif")
+            return None, None, 1.0
+        except Exception as e:
+            print(f"Error loading HEIC/HEIF image {image_path}: {e}")
+            return None, None, 1.0
+    else:
+        img = cv2.imread(image_path)
+
     if img is None:
         return None, None, 1.0
 
@@ -191,7 +217,6 @@ def load_image(image_path, max_size=1920):
     h, w = img.shape[:2]
 
     # Downsample if needed
-    scale = 1.0
     if max(h, w) > max_size:
         scale = max_size / max(h, w)
         new_w, new_h = int(w * scale), int(h * scale)
@@ -387,18 +412,18 @@ def detect_and_embed_faces(input_folder, output_folder,
     app = initialize_face_analyzer()
 
     # Get all image files (Recursive)
-    valid_extensions = {'.jpg', '.jpeg', '.png', '.bmp'}
+    valid_extensions = {'.jpg', '.jpeg', '.png', '.bmp', '.heic', '.heif'}
     image_files = []
-    
+
     # Folders to exclude
     excluded_dirs = {'face_detection_output', 'all_images_processed', '__pycache__', '.git'}
-    
+
     print(f"Scanning folder: {input_folder} (recursive)")
-    
+
     for root, dirs, files in os.walk(input_folder):
         # Exclude directories in-place
         dirs[:] = [d for d in dirs if d not in excluded_dirs and not d.startswith('.')]
-        
+
         for f in files:
             if Path(f).suffix.lower() in valid_extensions:
                 # Skip representative faces if re-scanning output
@@ -429,7 +454,7 @@ def detect_and_embed_faces(input_folder, output_folder,
             # Create unique ID for this image based on path hash or relative path to handle duplicates in subfolders
             # We'll stick to a simple strategy: unique subfolder in output per processed image
             # But wait, we need face crops to be saved somewhere for representative face generation.
-            
+
             # Simple hash for folder name to avoid collisions
             import hashlib
             rel_path_hash = hashlib.md5(img_path.encode('utf-8')).hexdigest()[:8]
@@ -497,7 +522,11 @@ def detect_and_embed_faces(input_folder, output_folder,
                 face_img = original_img[crop_y1:crop_y2, crop_x1:crop_x2]
 
                 # Save face crop (still needed for UI thumbnails/representative faces)
-                face_filename = f"face_{i + 1}_{img_file}"
+                original_suffix = Path(img_path).suffix.lower()
+                if original_suffix in {'.heic', '.heif'}:
+                    face_filename = f"face_{i + 1}_{Path(img_file).stem}.png"
+                else:
+                    face_filename = f"face_{i + 1}_{Path(img_file).stem}{original_suffix}"
                 face_output_path = os.path.join(image_output_folder, face_filename)
                 cv2.imwrite(face_output_path, face_img)
 
