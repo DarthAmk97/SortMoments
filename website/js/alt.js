@@ -495,6 +495,7 @@
         let locked = false;
         let touchStartY = 0;
         let touchConsumed = false;
+        let activeFrame = 0;
 
         function refreshStacks() {
             stacks = stackDefinitions
@@ -504,6 +505,7 @@
                 .filter((entry, index, list) => list.findIndex((item) => item.element === entry.element) === index)
                 .filter((entry) => entry.element.getBoundingClientRect().height > 24);
             stacks.forEach(({ element, definition }, index) => prepareStack(element, definition, index));
+            updateActiveStack();
         }
 
         function isInteractiveTarget(target) {
@@ -530,6 +532,22 @@
             return nearest;
         }
 
+        function updateActiveStack() {
+            if (!stacks.length) return;
+            const active = mobileStack.matches ? nearestStackIndex() : -1;
+            stacks.forEach(({ element }, index) => {
+                element.classList.toggle('is-active-stack', index === active);
+            });
+        }
+
+        function queueActiveUpdate() {
+            if (activeFrame) return;
+            activeFrame = window.requestAnimationFrame(() => {
+                activeFrame = 0;
+                updateActiveStack();
+            });
+        }
+
         function go(direction) {
             if (!mobileStack.matches || reduceMotion || locked) return;
             if (!stacks.length) refreshStacks();
@@ -543,13 +561,24 @@
             locked = true;
             const top = target.getBoundingClientRect().top + window.scrollY - stackOffset();
             window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
-            window.setTimeout(() => { locked = false; }, 620);
+            queueActiveUpdate();
+            window.setTimeout(() => {
+                locked = false;
+                updateActiveStack();
+            }, 620);
         }
 
         refreshStacks();
         refreshMobileStacks = refreshStacks;
-        window.addEventListener('resize', refreshStacks);
-        window.addEventListener('load', refreshStacks);
+        window.addEventListener('resize', () => {
+            refreshStacks();
+            queueActiveUpdate();
+        });
+        window.addEventListener('load', () => {
+            refreshStacks();
+            queueActiveUpdate();
+        });
+        window.addEventListener('scroll', queueActiveUpdate, { passive: true });
 
         window.addEventListener('wheel', (event) => {
             if (!mobileStack.matches || Math.abs(event.deltaY) < 12 || isInteractiveTarget(event.target)) return;

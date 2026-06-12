@@ -106,6 +106,8 @@ a { color: inherit; }
     text-shadow: 0 1px 0 rgba(0, 0, 0, 0.22);
 }
 
+.mobile-quip { display: none; }
+
 html[lang="ur"] .hand-note {
     font-family: var(--urdu-font);
     letter-spacing: 0;
@@ -1259,7 +1261,12 @@ html[dir="rtl"] .demo .section-intro {
         padding: 0.72rem;
     }
 
-    .developer-grid .dev-kicker { font-size: 0.66rem; }
+    .developer-grid .dev-kicker {
+        display: inline-block;
+        width: max-content;
+        max-width: calc(100% - 7rem);
+        font-size: 0.66rem;
+    }
     .developer-grid strong {
         max-width: 17ch;
         margin: 0.55rem 0 0.58rem;
@@ -1286,10 +1293,12 @@ html[dir="rtl"] .demo .section-intro {
         font-weight: 700;
         line-height: 1.08;
         letter-spacing: -0.035em;
-        opacity: 0.88;
+        opacity: 0;
+        visibility: hidden;
         pointer-events: none;
         text-wrap: balance;
         transform: rotate(-4deg);
+        transition: opacity 180ms ease, visibility 180ms ease;
     }
 
     .mobile-quip::before { content: "“"; }
@@ -1307,6 +1316,11 @@ html[dir="rtl"] .demo .section-intro {
     .mobile-stack > .mobile-quip {
         position: absolute;
         z-index: 0;
+    }
+
+    .mobile-stack.is-active-stack > .mobile-quip {
+        opacity: 0.88;
+        visibility: visible;
     }
 
     .mobile-stack .mobile-quip {
@@ -1337,6 +1351,7 @@ html[dir="rtl"] .demo .section-intro {
     }
 
     #developers .mobile-quip {
+        left: auto;
         right: clamp(8px, 4vw, 18px);
         bottom: clamp(6px, 2svh, 16px);
         max-width: 14ch;
@@ -1351,17 +1366,31 @@ html[dir="rtl"] .demo .section-intro {
     }
 
     .dev-status {
-        top: 32px;
-        right: 64px;
-        font-size: 0.92rem;
+        top: 0.72rem;
+        right: 3.3rem;
+        max-width: 7.5rem;
+        font-size: clamp(0.72rem, 3.8vw, 0.9rem);
         transform: rotate(-5deg);
+    }
+    .dev-lock {
+        top: 0.72rem;
+        right: 0.72rem;
+        width: 32px;
+        height: 32px;
     }
     .developer-grid .is-locked strong { padding-right: 0; }
     .faq { display: none; }
     .privacy-copy, .section-intro p:not(.overline) { font-size: 0.95rem; }
     .footer { display: grid; }
+    .scroll-veil { display: none; }
     .motion-ready .reveal-left { transform: translate3d(-8px, 0, 0); }
     .motion-ready .reveal-right { transform: translate3d(8px, 0, 0); }
+}
+
+@media (max-width: 720px) and (max-height: 640px) {
+    #developers .mobile-quip {
+        display: none;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
