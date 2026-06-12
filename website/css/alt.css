@@ -1121,7 +1121,7 @@ html[dir="rtl"] .demo .section-intro {
     .facts, .developer-grid { grid-template-columns: 1fr; }
     .hand-note {
         font-family: var(--font);
-        font-style: italic;
+        font-style: normal;
         font-weight: 780;
         letter-spacing: -0.014em;
         line-height: 1.18;
@@ -1129,14 +1129,14 @@ html[dir="rtl"] .demo .section-intro {
     }
     .hero-stats dt.hand-note {
         font-family: var(--font);
-        font-style: italic;
+        font-style: normal;
         font-weight: 780;
         font-size: 0.86rem;
         letter-spacing: 0;
     }
     .hero-carousel figcaption .hand-note {
         font-family: var(--font);
-        font-style: italic;
+        font-style: normal;
         font-weight: 780;
         font-size: 0.98rem;
         line-height: 1.45;
@@ -1144,7 +1144,7 @@ html[dir="rtl"] .demo .section-intro {
     .facts strong.hand-note,
     .facts .stat-word {
         font-family: var(--font);
-        font-style: italic;
+        font-style: normal;
         font-weight: 780;
         font-size: 1rem;
     }
