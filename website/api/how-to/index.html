@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sort Moments Python API how-to preview. Coming soon until PyPI packaging is verified; use the CLI from source today.">
+    <link rel="canonical" href="https://sortmoments.com/api/how-to/">
+    <title>Sort Moments API how-to - Coming Soon</title>
+    <link rel="stylesheet" href="/css/docs-obsidian.css?v=obsidian-docs-2">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+</head>
+<body>
+    <header>
+        <nav>
+            <a class="logo" href="/" aria-label="Sort Moments home">
+                <img src="/assets/sortmoments_logo_transparent.png" alt="Sort Moments logo" class="logo-image">
+                <span class="logo-text">Sort Moments</span>
+            </a>
+            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+            <div class="nav-links" id="navLinks">
+                <a href="/api/" class="nav-product-link">
+                    <span class="nav-icon" aria-hidden="true">{ }</span>
+                    <span class="nav-label">Python API</span>
+                    <span class="nav-sticker" aria-label="Coming soon">Soon</span>
+                </a>
+                <a href="/cli/" class="nav-product-link">
+                    <span class="nav-icon" aria-hidden="true">$</span>
+                    <span class="nav-label">CLI</span>
+                    <span class="nav-sticker" aria-label="Available">Live</span>
+                </a>
+                <a href="https://github.com/DarthAmk97/SortMoments" target="_blank" rel="noopener">GitHub</a>
+            </div>
+        </nav>
+    </header>
+    <main class="docs-page">
+        <div class="docs-shell">
+            <aside class="docs-sidebar" aria-label="Documentation navigation">
+                <p class="docs-sidebar-title">Docs</p>
+                <div class="docs-nav-group">
+<a href="/api/">Overview<span class="side-sticker">Soon</span></a>
+<a href="/api/how-to/" class="active">How-to</a>
+<a href="/api/reference/">Reference</a>
+<a href="/api/model-swapping/">Model swapping</a>
+<a href="/cli/">CLI<span class="side-sticker">Live</span></a>
+</div><p class="docs-sidebar-title">Project</p><div class="docs-nav-group"><a href="/">Home</a><a href="https://github.com/DarthAmk97/SortMoments" target="_blank" rel="noopener">GitHub</a><a href="https://github.com/DarthAmk97/SortMoments/issues" target="_blank" rel="noopener">Issues</a><a href="https://github.com/DarthAmk97/SortMoments/releases" target="_blank" rel="noopener">Releases</a><a href="/archive/">Archive</a></div>
+            </aside>
+            <article class="docs-main">
+                <section class="docs-hero">
+                    <div class="docs-eyebrow"><span class="docs-badge">Coming soon</span><span class="docs-route">/api/how-to/</span></div>
+                    <h1>How to control Sort Moments from Python.</h1>
+                    <p class="docs-lede">Guided recipes for one-off runs, reusable organizers, output/session control, progress callbacks, staged detection, and safer error handling.</p>
+                </section>
+                <section class="docs-status-note docs-status-soon">
+                    <strong>Python API status: coming soon.</strong>
+                    <p>These docs describe the intended package surface. Do not treat the PyPI install path as live until the package, wheel metadata, and import surface are verified. For now, use the CLI from source.</p>
+                </section>
+                
+        <section class="docs-section" id="quickstart"><h2>Quickstart</h2><p>Use <a href="/api/reference/#organize-photos"><span class="inline-code">organize_photos()</span></a> when you want defaults close to the desktop app and do not need to reuse configuration.</p><pre class="code-block">from sortmoments import organize_photos
+
+result = organize_photos("D:/photos/wedding")
+print("Output:", result.output_folder)
+print("People:", result.person_count)
+print("Faces:", result.face_count)</pre><p>The output defaults to <span class="inline-code">&lt;input&gt;/all_images_processed</span>. Each person folder starts as <span class="inline-code">rename_0</span>, <span class="inline-code">rename_1</span>, etc.</p></section>
+        <section class="docs-section" id="configured-run"><h2>Configured organizer</h2><p>Use <a href="/api/reference/#organizer"><span class="inline-code">SortMomentsOrganizer</span></a> when you want one configured object for multiple folders, callbacks, model overrides, or testable dependency injection.</p><pre class="code-block">from sortmoments import SortMomentsConfig, SortMomentsOrganizer
+
+config = SortMomentsConfig(
+    min_face_size=96,
+    min_confidence=0.86,
+    similarity_threshold=0.60,
+    batch_size=6,
+    max_workers=3,
+    prefer_gpu=True,
+)
+organizer = SortMomentsOrganizer(config)</pre><p class="docs-mini-links">See all fields in <a href="/api/reference/#config">SortMomentsConfig</a>.</p></section>
+        <section class="docs-section" id="output-control"><h2>Output and session control</h2><p>You can keep source photos untouched, choose a final output directory, and isolate repeated runs under a session id.</p><pre class="code-block">organizer = SortMomentsOrganizer(SortMomentsConfig(
+    final_output_folder="E:/sorted/family",
+    session_id="threshold-060",
+    keep_intermediate=True,
+))
+result = organizer.organize("E:/incoming/family")</pre><ul><li><span class="inline-code">final_output_folder</span> sets the exact final destination.</li><li><span class="inline-code">session_id</span> lets you compare runs without overwriting a previous result.</li><li><span class="inline-code">keep_intermediate</span> keeps face crops and embeddings for inspection or regrouping.</li></ul></section>
+        <section class="docs-section" id="progress"><h2>Progress callbacks</h2><p>Callbacks receive <span class="inline-code">current</span>, <span class="inline-code">total</span>, and a message. Use this for notebook progress, terminal logs, background workers, or a custom UI.</p><pre class="code-block">def on_progress(current, total, message):
+    pct = 0 if not total else round((current / total) * 100, 1)
+    print(f"{pct:5.1f}%  {message}")
+
+organizer = SortMomentsOrganizer(progress_callback=on_progress)</pre></section>
+        <section class="docs-section" id="two-pass"><h2>Two-pass workflow: detect once, regroup many times</h2><p>This is the control pattern you want when tuning thresholds. Detection is the expensive step; grouping is the experiment.</p><pre class="code-block">from sortmoments import SortMomentsConfig, detect_faces, group_faces
+
+config = SortMomentsConfig(keep_intermediate=True)
+work = "D:/cache/sortmoments/family-faces"
+detect_faces("D:/photos/family", work, config=config)
+
+for threshold in [0.50, 0.56, 0.62]:
+    trial = SortMomentsConfig(
+        similarity_threshold=threshold,
+        final_output_folder=f"D:/sorted/family-{threshold}",
+    )
+    people, folder = group_faces(work, input_folder="D:/photos/family", config=trial)
+    print(threshold, len(people), folder)</pre></section>
+        <section class="docs-section" id="error-handling"><h2>Error handling</h2><p>Long-running photo jobs fail for normal reasons: missing paths, unreadable images, model initialization, filesystem permissions, or disk space. Keep scripts explicit.</p><pre class="code-block">from pathlib import Path
+from sortmoments import organize_photos
+
+folder = Path("D:/photos/family")
+if not folder.exists():
+    raise SystemExit(f"Missing folder: {folder}")
+
+try:
+    result = organize_photos(folder)
+except Exception as exc:
+    print(f"Sort Moments failed: {exc}")</pre><p>For unattended batch runs, consider the <a href="/cli/#exit-codes">CLI exit codes</a> and <a href="/cli/#config-file">JSON config</a>.</p></section>
+        <section class="docs-section" id="next"><h2>Next steps</h2><div class="docs-next-grid"><a href="/api/reference/">Read the full reference</a><a href="/api/model-swapping/">Swap detector or grouping model</a><a href="/cli/">Run the same job from terminal</a></div></section>
+
+            </article>
+            <aside class="docs-toc" aria-label="On this page">
+                <p class="docs-toc-title">On this page</p>
+                <a href="#quickstart">Quickstart</a>
+<a href="#configured-run">Configured run</a>
+<a href="#output-control">Output control</a>
+<a href="#progress">Progress</a>
+<a href="#two-pass">Two-pass</a>
+<a href="#error-handling">Errors</a>
+<a href="#next">Next</a>
+            </aside>
+        </div>
+    </main>
+    <footer>
+        <div class="footer-content">
+            <div class="footer-links"><a href="/">Home</a><a href="/api/">Python API</a><a href="/api/how-to/">How-to</a><a href="/api/reference/">Reference</a><a href="/cli/">CLI</a><a href="/privacy/">Privacy Policy</a><a href="/archive/">Archive</a></div>
+            <p class="footer-credit">Made by Abdullah Khawaja</p>
+        </div>
+    </footer>
+    <script src="/js/main.js?v=obsidian-docs-2"></script>
+</body>
+</html>
+

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sort Moments Python API reference preview. Coming soon until PyPI packaging is verified; use the CLI from source today.">
+    <link rel="canonical" href="https://sortmoments.com/api/reference/">
+    <title>Sort Moments API reference - Coming Soon</title>
+    <link rel="stylesheet" href="/css/docs-obsidian.css?v=obsidian-docs-2">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+</head>
+<body>
+    <header>
+        <nav>
+            <a class="logo" href="/" aria-label="Sort Moments home">
+                <img src="/assets/sortmoments_logo_transparent.png" alt="Sort Moments logo" class="logo-image">
+                <span class="logo-text">Sort Moments</span>
+            </a>
+            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+            <div class="nav-links" id="navLinks">
+                <a href="/api/" class="nav-product-link">
+                    <span class="nav-icon" aria-hidden="true">{ }</span>
+                    <span class="nav-label">Python API</span>
+                    <span class="nav-sticker" aria-label="Coming soon">Soon</span>
+                </a>
+                <a href="/cli/" class="nav-product-link">
+                    <span class="nav-icon" aria-hidden="true">$</span>
+                    <span class="nav-label">CLI</span>
+                    <span class="nav-sticker" aria-label="Available">Live</span>
+                </a>
+                <a href="https://github.com/DarthAmk97/SortMoments" target="_blank" rel="noopener">GitHub</a>
+            </div>
+        </nav>
+    </header>
+    <main class="docs-page">
+        <div class="docs-shell">
+            <aside class="docs-sidebar" aria-label="Documentation navigation">
+                <p class="docs-sidebar-title">Docs</p>
+                <div class="docs-nav-group">
+<a href="/api/">Overview<span class="side-sticker">Soon</span></a>
+<a href="/api/how-to/">How-to</a>
+<a href="/api/reference/" class="active">Reference</a>
+<a href="/api/model-swapping/">Model swapping</a>
+<a href="/cli/">CLI<span class="side-sticker">Live</span></a>
+</div><p class="docs-sidebar-title">Project</p><div class="docs-nav-group"><a href="/">Home</a><a href="https://github.com/DarthAmk97/SortMoments" target="_blank" rel="noopener">GitHub</a><a href="https://github.com/DarthAmk97/SortMoments/issues" target="_blank" rel="noopener">Issues</a><a href="https://github.com/DarthAmk97/SortMoments/releases" target="_blank" rel="noopener">Releases</a><a href="/archive/">Archive</a></div>
+            </aside>
+            <article class="docs-main">
+                <section class="docs-hero">
+                    <div class="docs-eyebrow"><span class="docs-badge">Coming soon</span><span class="docs-route">/api/reference/</span></div>
+                    <h1>API reference.</h1>
+                    <p class="docs-lede">The public surface is intentionally small, but it exposes the control points users need: config fields, organizer methods, staged functions, return objects, callbacks, and provider protocols.</p>
+                </section>
+                <section class="docs-status-note docs-status-soon">
+                    <strong>Python API status: coming soon.</strong>
+                    <p>These docs describe the intended package surface. Do not treat the PyPI install path as live until the package, wheel metadata, and import surface are verified. For now, use the CLI from source.</p>
+                </section>
+                
+        <section class="docs-section" id="config"><h2>SortMomentsConfig</h2><p>The config object is the control panel for the default pipeline. Defaults match the app/CLI pipeline.</p><div class="docs-table"><div><strong>Field</strong><strong>Default</strong><strong>Why change it?</strong></div><div><code>min_face_size</code><span>80</span><span>Raise for high-res albums to ignore tiny background faces.</span></div><div><code>min_confidence</code><span>0.8</span><span>Raise for precision, lower if the model misses hard angles.</span></div><div><code>min_face_ratio</code><span>0.01</span><span>Filters faces that are tiny relative to the image.</span></div><div><code>foreground_ratio_threshold</code><span>0.1</span><span>Keeps faces that matter compared with the largest face.</span></div><div><code>blur_threshold</code><span>60</span><span>Raise to reject soft crops; lower for old/noisy albums.</span></div><div><code>similarity_threshold</code><span>0.5</span><span>Higher makes groups stricter; lower merges more aggressively.</span></div><div><code>batch_size</code><span>8</span><span>Tune memory and throughput.</span></div><div><code>max_workers</code><span>4</span><span>Parallel image loading workers.</span></div><div><code>final_output_folder</code><span>None</span><span>Choose exact final destination.</span></div><div><code>session_id</code><span>None</span><span>Keep multiple runs side by side.</span></div><div><code>keep_intermediate</code><span>False</span><span>Keep face crops/embeddings for debugging.</span></div></div></section>
+        <section class="docs-section" id="performance"><h2>Performance and model fields</h2><pre class="code-block">SortMomentsConfig(
+    prefer_gpu=True,
+    model_name="buffalo_l",
+    det_size=(640, 640),
+    batch_size=8,
+    max_workers=4,
+)</pre><ul><li><span class="inline-code">prefer_gpu=False</span> forces CPU execution.</li><li><span class="inline-code">model_name</span> is passed to InsightFace model-pack loading.</li><li><span class="inline-code">det_size</span> trades speed and detection sensitivity.</li></ul><p class="docs-mini-links">CLI equivalents: <a href="/cli/#model-options">model options</a>.</p></section>
+        <section class="docs-section" id="organize-photos"><h2>organize_photos()</h2><pre class="code-block">organize_photos(
+    input_folder,
+    work_folder=None,
+    config=None,
+    face_model=None,
+    embedding_model=None,
+    grouping_model=None,
+    progress_callback=None,
+) -> OrganizationResult</pre></section>
+        <section class="docs-section" id="organizer"><h2>SortMomentsOrganizer</h2><p>Reusable pipeline wrapper. It stores config, injected models, and callback once.</p><pre class="code-block">organizer = SortMomentsOrganizer(
+    config=SortMomentsConfig(similarity_threshold=0.58),
+    face_model=None,
+    embedding_model=None,
+    grouping_model=None,
+    progress_callback=None,
+)
+
+result = organizer.organize("D:/photos/family")
+embeddings = organizer.detect_faces("D:/photos/family", "D:/cache/faces")
+people, folder = organizer.group_faces("D:/cache/faces", input_folder="D:/photos/family")</pre></section>
+        <section class="docs-section" id="staged-functions"><h2>detect_faces() and group_faces()</h2><div class="api-index-list"><div class="api-index-item"><code>detect_faces(input_folder, output_folder, ...)</code><p>Writes face crops and <span class="inline-code">face_embeddings_insightface.pkl</span>. Accepts <span class="inline-code">face_model</span> and <span class="inline-code">embedding_model</span>.</p></div><div class="api-index-item"><code>group_faces(intermediate_folder, ...)</code><p>Reads embeddings and writes final person folders. Accepts <span class="inline-code">grouping_model</span>.</p></div></div></section>
+        <section class="docs-section" id="result"><h2>OrganizationResult</h2><div class="docs-table docs-table-compact"><div><strong>Attribute</strong><strong>Type</strong><strong>Meaning</strong></div><div><code>persons</code><span>Mapping[str, Sequence[str]]</span><span>Person folder id to original photo paths.</span></div><div><code>output_folder</code><span>Path</span><span>Final organized folder.</span></div><div><code>embeddings_file</code><span>Path</span><span>Intermediate embeddings pickle path.</span></div><div><code>person_count</code><span>int</span><span>Number of groups created.</span></div><div><code>face_count</code><span>int</span><span>Number of face records used.</span></div></div></section>
+        <section class="docs-section" id="callbacks"><h2>ProgressCallback</h2><pre class="code-block">def callback(current: int, total: int, message: str) -> None:
+    ...</pre><p>Callbacks should stay quick. If you are updating a UI or remote job record, push work onto your own queue.</p></section>
+        <section class="docs-section" id="providers"><h2>Provider protocols</h2><pre class="code-block">class FaceModel:
+    def get(self, image_rgb):
+        # Return face objects with bbox, det_score, and optionally embedding.
+
+class EmbeddingModel:
+    def embed(self, image_rgb, face):
+        # Return one embedding vector for a detected face.
+
+class GroupingModel:
+    def group(self, face_records, similarity_threshold=0.5):
+        # Return {person_id: [FaceRecord or face_path, ...]}.</pre><p class="docs-mini-links">Full examples: <a href="/api/model-swapping/">model swapping guide</a>.</p></section>
+
+            </article>
+            <aside class="docs-toc" aria-label="On this page">
+                <p class="docs-toc-title">On this page</p>
+                <a href="#config">Config</a>
+<a href="#performance">Performance</a>
+<a href="#organize-photos">organize_photos</a>
+<a href="#organizer">Organizer</a>
+<a href="#staged-functions">Staged functions</a>
+<a href="#result">Result</a>
+<a href="#callbacks">Callbacks</a>
+<a href="#providers">Providers</a>
+            </aside>
+        </div>
+    </main>
+    <footer>
+        <div class="footer-content">
+            <div class="footer-links"><a href="/">Home</a><a href="/api/">Python API</a><a href="/api/how-to/">How-to</a><a href="/api/reference/">Reference</a><a href="/cli/">CLI</a><a href="/privacy/">Privacy Policy</a><a href="/archive/">Archive</a></div>
+            <p class="footer-credit">Made by Abdullah Khawaja</p>
+        </div>
+    </footer>
+    <script src="/js/main.js?v=obsidian-docs-2"></script>
+</body>
+</html>
+

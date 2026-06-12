@@ -3,4 +3,19 @@ Allow: /
 Disallow: /admin/
 Disallow: /__pycache__/
 
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
 Sitemap: https://sortmoments.com/sitemap.xml

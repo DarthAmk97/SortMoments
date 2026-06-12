@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    <url>
-        <loc>https://sortmoments.com/</loc>
-        <lastmod>2026-02-09</lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>1.0</priority>
-    </url>
+  <url><loc>https://sortmoments.com/</loc></url>
+  <url><loc>https://sortmoments.com/privacy/</loc></url>
+  <url><loc>https://sortmoments.com/archive/</loc></url>
+  <url><loc>https://sortmoments.com/api/</loc></url>
+  <url><loc>https://sortmoments.com/api/how-to/</loc></url>
+  <url><loc>https://sortmoments.com/api/reference/</loc></url>
+  <url><loc>https://sortmoments.com/api/model-swapping/</loc></url>
+  <url><loc>https://sortmoments.com/cli/</loc></url>
+  <url><loc>https://sortmoments.com/archive/first-generation/</loc></url>
 </urlset>
+

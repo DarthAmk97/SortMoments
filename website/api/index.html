@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sort Moments Python API documentation preview. The package is marked coming soon until PyPI packaging is verified; use the CLI from source today.">
+    <link rel="canonical" href="https://sortmoments.com/api/">
+    <title>Sort Moments Python API - Coming Soon</title>
+    <link rel="stylesheet" href="/css/docs-obsidian.css?v=obsidian-docs-2">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+</head>
+<body>
+    <header>
+        <nav>
+            <a class="logo" href="/" aria-label="Sort Moments home">
+                <img src="/assets/sortmoments_logo_transparent.png" alt="Sort Moments logo" class="logo-image">
+                <span class="logo-text">Sort Moments</span>
+            </a>
+            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+            <div class="nav-links" id="navLinks">
+                <a href="/api/" class="nav-product-link">
+                    <span class="nav-icon" aria-hidden="true">{ }</span>
+                    <span class="nav-label">Python API</span>
+                    <span class="nav-sticker" aria-label="Coming soon">Soon</span>
+                </a>
+                <a href="/cli/" class="nav-product-link">
+                    <span class="nav-icon" aria-hidden="true">$</span>
+                    <span class="nav-label">CLI</span>
+                    <span class="nav-sticker" aria-label="Available">Live</span>
+                </a>
+                <a href="https://github.com/DarthAmk97/SortMoments" target="_blank" rel="noopener">GitHub</a>
+            </div>
+        </nav>
+    </header>
+    <main class="docs-page">
+        <div class="docs-shell">
+            <aside class="docs-sidebar" aria-label="Documentation navigation">
+                <p class="docs-sidebar-title">Docs</p>
+                <div class="docs-nav-group">
+<a href="/api/" class="active">Overview<span class="side-sticker">Soon</span></a>
+<a href="/api/how-to/">How-to</a>
+<a href="/api/reference/">Reference</a>
+<a href="/api/model-swapping/">Model swapping</a>
+<a href="/cli/">CLI<span class="side-sticker">Live</span></a>
+</div><p class="docs-sidebar-title">Project</p><div class="docs-nav-group"><a href="/">Home</a><a href="https://github.com/DarthAmk97/SortMoments" target="_blank" rel="noopener">GitHub</a><a href="https://github.com/DarthAmk97/SortMoments/issues" target="_blank" rel="noopener">Issues</a><a href="https://github.com/DarthAmk97/SortMoments/releases" target="_blank" rel="noopener">Releases</a><a href="/archive/">Archive</a></div>
+            </aside>
+            <article class="docs-main">
+                <section class="docs-hero">
+                    <div class="docs-eyebrow"><span class="docs-badge">Coming soon</span><span class="docs-route">/api/</span></div>
+                    <h1>Python API, once the package is actually ready.</h1>
+                    <p class="docs-lede">The API docs are being kept as the intended package surface, not a live PyPI promise. CLI stays usable from source while the Python package gets cleaned up properly.</p>
+                </section>
+                <section class="docs-status-note docs-status-soon">
+                    <strong>Python API status: coming soon.</strong>
+                    <p>This is the intended package surface, not a live PyPI promise. Use the CLI from source today; publish the Python package only after the wheel, metadata, and imports are verified.</p>
+                </section>
+                
+        <div class="docs-card-grid docs-card-grid-three">
+            <a class="docs-card" href="/api/how-to/#quickstart"><strong>Planned quickstart</strong><span>The intended one-call path once the package is actually shipped.</span></a>
+            <a class="docs-card" href="/api/reference/#config"><strong>Tune every threshold</strong><span>Face size, confidence, blur, similarity, workers, output folders.</span></a>
+            <a class="docs-card" href="/api/model-swapping/#detector"><strong>Planned model hooks</strong><span>Target support for detector, embedding, grouping, or InsightFace pack overrides.</span></a>
+            <a class="docs-card" href="/api/how-to/#two-pass"><strong>Planned staged runs</strong><span>Detect once, regroup many times with different rules after the package ships.</span></a>
+            <a class="docs-card" href="/api/reference/#callbacks"><strong>Planned callbacks</strong><span>Target callbacks for notebooks, logs, dashboards, or workers.</span></a>
+            <a class="docs-card" href="/cli/#config-file"><strong>Prefer terminal control?</strong><span>Use the CLI for dry-runs, JSON config, and batch scripts.</span></a>
+        </div>
+        <section class="docs-section" id="install"><h2>Package status: coming soon</h2><p>The Python API should ship like a normal package, but it should not pretend to be on PyPI before the release is actually done.</p><pre class="code-block"># planned
+python -m pip install sortmoments</pre><p>For now, treat this page as the target API shape. The CLI remains the safer published path until the PyPI package, wheel metadata, and import surface are verified.</p><p class="docs-mini-links">Next: <a href="/api/how-to/#quickstart">quickstart</a> &middot; <a href="/api/reference/#config">configuration</a> &middot; <a href="/cli/#install">source CLI setup</a></p></section>
+        <section class="docs-section" id="entry-points"><h2>Choose the level of control</h2><div class="api-index-list">
+            <a class="api-index-item api-index-link" href="/api/how-to/#quickstart"><code>organize_photos()</code><p>Fastest path. Use this for one-off scripts that should match the desktop app defaults.</p></a>
+            <a class="api-index-item api-index-link" href="/api/reference/#organizer"><code>SortMomentsOrganizer</code><p>Reusable object for repeated runs with the same config, model hooks, and callback.</p></a>
+            <a class="api-index-item api-index-link" href="/api/how-to/#two-pass"><code>detect_faces()</code><p>Run detection and embedding only. Useful when you want to cache face crops/embeddings.</p></a>
+            <a class="api-index-item api-index-link" href="/api/how-to/#two-pass"><code>group_faces()</code><p>Regroup existing embeddings without redetecting faces. Good for threshold experiments.</p></a>
+        </div></section>
+        <section class="docs-section" id="control-map"><h2>Control map</h2><p>Sort Moments exposes control at the places advanced users normally need it: input/output, filtering, performance, model selection, grouping, and observability.</p><div class="control-grid">
+            <div><h3>Folder control</h3><p>Set <span class="inline-code">input_folder</span>, <span class="inline-code">work_folder</span>, <span class="inline-code">final_output_folder</span>, and <span class="inline-code">session_id</span>.</p><a href="/api/how-to/#output-control">Output control &rarr;</a></div>
+            <div><h3>Quality filters</h3><p>Adjust face size, confidence, face ratio, foreground ratio, and blur thresholds.</p><a href="/api/reference/#config">Config reference &rarr;</a></div>
+            <div><h3>Performance</h3><p>Change batch size, worker count, GPU preference, model pack, and detector input size.</p><a href="/api/reference/#performance">Performance fields &rarr;</a></div>
+            <div><h3>Model swapping</h3><p>Inject detector, embedder, and grouping strategy objects without forking the app.</p><a href="/api/model-swapping/">Model swapping guide &rarr;</a></div>
+        </div></section>
+        <section class="docs-section" id="first-script"><h2>First useful script</h2><pre class="code-block">from sortmoments import SortMomentsConfig, SortMomentsOrganizer
+
+def progress(current, total, message):
+    print(f"[{current}/{total}] {message}")
+
+organizer = SortMomentsOrganizer(
+    SortMomentsConfig(
+        final_output_folder="D:/sorted/family",
+        similarity_threshold=0.58,
+        batch_size=8,
+        max_workers=4,
+        keep_intermediate=True,
+    ),
+    progress_callback=progress,
+)
+
+result = organizer.organize("D:/photos/family-archive")
+print(result.output_folder)
+print(result.person_count, "people")</pre><p class="docs-mini-links">Related: <a href="/api/how-to/#progress">progress callbacks</a> &middot; <a href="/api/reference/#result">result object</a> &middot; <a href="/api/model-swapping/#grouping">custom grouping</a></p></section>
+        <section class="docs-section" id="routes"><h2>Documentation routes</h2><p>These are intentionally separate URLs, not one overloaded <span class="inline-code">/api</span> page.</p><div class="route-list"><a href="/api/how-to/"><span>/api/how-to/</span><strong>Guided recipes</strong></a><a href="/api/reference/"><span>/api/reference/</span><strong>Classes, fields, returns</strong></a><a href="/api/model-swapping/"><span>/api/model-swapping/</span><strong>Custom models and contracts</strong></a><a href="/cli/"><span>/cli/</span><strong>No-GUI terminal workflow</strong></a></div></section>
+
+            </article>
+            <aside class="docs-toc" aria-label="On this page">
+                <p class="docs-toc-title">On this page</p>
+                <a href="#install">Install</a>
+<a href="#entry-points">Entry points</a>
+<a href="#control-map">Control map</a>
+<a href="#first-script">First script</a>
+<a href="#routes">Routes</a>
+            </aside>
+        </div>
+    </main>
+    <footer>
+        <div class="footer-content">
+            <div class="footer-links"><a href="/">Home</a><a href="/api/">Python API</a><a href="/api/how-to/">How-to</a><a href="/api/reference/">Reference</a><a href="/cli/">CLI</a><a href="/privacy/">Privacy Policy</a><a href="/archive/">Archive</a></div>
+            <p class="footer-credit">Made by Abdullah Khawaja</p>
+        </div>
+    </footer>
+    <script src="/js/main.js?v=obsidian-docs-2"></script>
+</body>
+</html>
+

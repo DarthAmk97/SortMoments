@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="sortmoments CLI docs for local-first face-based photo organization from source. Python API package remains coming soon.">
+    <link rel="canonical" href="https://sortmoments.com/cli/">
+    <title>sortmoments CLI - Sort Moments</title>
+    <link rel="stylesheet" href="/css/docs-obsidian.css?v=obsidian-docs-2">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+</head>
+<body>
+    <header>
+        <nav>
+            <a class="logo" href="/" aria-label="Sort Moments home">
+                <img src="/assets/sortmoments_logo_transparent.png" alt="Sort Moments logo" class="logo-image">
+                <span class="logo-text">Sort Moments</span>
+            </a>
+            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+            <div class="nav-links" id="navLinks">
+                <a href="/api/" class="nav-product-link">
+                    <span class="nav-icon" aria-hidden="true">{ }</span>
+                    <span class="nav-label">Python API</span>
+                    <span class="nav-sticker" aria-label="Coming soon">Soon</span>
+                </a>
+                <a href="/cli/" class="nav-product-link">
+                    <span class="nav-icon" aria-hidden="true">$</span>
+                    <span class="nav-label">CLI</span>
+                    <span class="nav-sticker" aria-label="Available">Live</span>
+                </a>
+                <a href="https://github.com/DarthAmk97/SortMoments" target="_blank" rel="noopener">GitHub</a>
+            </div>
+        </nav>
+    </header>
+    <main class="docs-page">
+        <div class="docs-shell">
+            <aside class="docs-sidebar" aria-label="Documentation navigation">
+                <p class="docs-sidebar-title">Docs</p>
+                <div class="docs-nav-group">
+<a href="/api/">Overview<span class="side-sticker">Soon</span></a>
+<a href="/api/how-to/">How-to</a>
+<a href="/api/reference/">Reference</a>
+<a href="/api/model-swapping/">Model swapping</a>
+<a href="/cli/" class="active">CLI<span class="side-sticker">Live</span></a>
+</div><p class="docs-sidebar-title">Project</p><div class="docs-nav-group"><a href="/">Home</a><a href="https://github.com/DarthAmk97/SortMoments" target="_blank" rel="noopener">GitHub</a><a href="https://github.com/DarthAmk97/SortMoments/issues" target="_blank" rel="noopener">Issues</a><a href="https://github.com/DarthAmk97/SortMoments/releases" target="_blank" rel="noopener">Releases</a><a href="/archive/">Archive</a></div>
+            </aside>
+            <article class="docs-main">
+                <section class="docs-hero">
+                    <div class="docs-eyebrow"><span class="docs-badge">Live</span><span class="docs-route">/cli/</span></div>
+                    <h1>sortmoments CLI view.</h1>
+                    <p class="docs-lede">Run Sort Moments without the GUI. Validate jobs, control paths, tune thresholds, configure model execution, and automate local-only photo sorting from a terminal.</p>
+                </section>
+                <section class="docs-status-note docs-status-live">
+                    <strong>CLI status: usable from source.</strong>
+                    <p>The terminal workflow stays in the header because it is the safer path right now. The Python package remains marked coming soon until the PyPI release is real.</p>
+                </section>
+                
+        <section class="docs-section" id="install"><h2>Set up from source</h2><p>The CLI view is the repo-based no-GUI workflow. It is separate from the PyPI library package: clone the project, install runtime dependencies, then run <span class="inline-code">sortmoments_cli.py</span>.</p><pre class="code-block">git clone https://github.com/DarthAmk97/SortMoments.git
+cd SortMoments
+python -m pip install -r requirements.txt
+python sortmoments_cli.py --help</pre><p class="docs-mini-links">Want the packaged Python API later? <a href="/api/#install">See the coming-soon package notes</a>.</p></section>
+        <section class="docs-section" id="dry-run"><h2>Dry-run first</h2><p>Dry-run validates paths, counts supported images, prints the processing plan, and does not import/load the model stack.</p><pre class="code-block">python sortmoments_cli.py organize D:/photos/family --output-folder D:/sorted/family --dry-run</pre></section>
+        <section class="docs-section" id="commands"><h2>Core commands</h2><p>Both forms work from the source wrapper. The explicit <span class="inline-code">organize</span> verb is recommended for docs and scripts.</p><pre class="code-block">python sortmoments_cli.py organize D:/photos/family --output-folder D:/sorted/family --yes
+python sortmoments_cli.py D:/photos/family --output-folder D:/sorted/family --yes
+python sortmoments_cli.py organize D:/photos/family --dry-run</pre></section>
+        <section class="docs-section" id="config-file"><h2>JSON config file</h2><p>Use JSON for repeatable jobs. CLI flags override config values, so you can keep a base config and tweak one run.</p><pre class="code-block">{
+  "input_folder": "D:/photos/family",
+  "output_folder": "D:/sorted/family",
+  "batch_size": 8,
+  "workers": 4,
+  "similarity_threshold": 0.58,
+  "prefer_gpu": true,
+  "keep_temp": true
+}</pre><pre class="code-block">python sortmoments_cli.py organize --config sortmoments-family.json --similarity-threshold 0.62 --yes</pre><p class="docs-mini-links">Library equivalent: <a href="/api/how-to/#configured-run">configured organizer</a>.</p></section>
+        <section class="docs-section" id="folder-options"><h2>Folder and output options</h2><div class="docs-table docs-table-compact"><div><strong>Flag</strong><strong>Meaning</strong><strong>Use when</strong></div><div><code>--output-folder</code><span>Final organized destination.</span><span>You do not want output under source.</span></div><div><code>--temp-folder</code><span>Temporary crops/embeddings folder.</span><span>You want cache/debug files somewhere specific.</span></div><div><code>--overwrite</code><span>Delete final output first.</span><span>You are replacing a previous run.</span></div><div><code>--keep-temp</code><span>Keep intermediate artifacts.</span><span>You want to inspect crops or debug models.</span></div></div></section>
+        <section class="docs-section" id="threshold-options"><h2>Quality and grouping options</h2><div class="api-index-list"><div class="api-index-item"><code>--min-face-size</code><p>Ignore faces below a pixel size. Raise this to avoid tiny background faces.</p></div><div class="api-index-item"><code>--min-confidence</code><p>Detection confidence floor from 0 to 1.</p></div><div class="api-index-item"><code>--blur-threshold</code><p>Reject blurry face crops. Lower for old/noisy images.</p></div><div class="api-index-item"><code>--similarity-threshold</code><p>Grouping strictness. Higher means fewer accidental merges.</p></div></div><p class="docs-mini-links">Same fields in Python: <a href="/api/reference/#config">SortMomentsConfig</a>.</p></section>
+        <section class="docs-section" id="model-options"><h2>Model and performance options</h2><div class="api-index-list"><div class="api-index-item"><code>--gpu / --cpu</code><p>Prefer GPU providers or force CPU-only execution.</p></div><div class="api-index-item"><code>--model-name</code><p>InsightFace model pack name passed into the default provider.</p></div><div class="api-index-item"><code>--det-size WIDTH HEIGHT</code><p>Detector input size. Smaller can be faster; larger can catch harder faces.</p></div><div class="api-index-item"><code>--batch-size</code><p>Images per batch.</p></div><div class="api-index-item"><code>--workers</code><p>Parallel image-loading workers.</p></div></div><pre class="code-block">python sortmoments_cli.py organize D:/photos/archive --cpu --det-size 512 512 --batch-size 4 --workers 2 --yes</pre></section>
+        <section class="docs-section" id="recipes"><h2>Recipes</h2><div class="docs-card-grid"><a class="docs-card" href="#dry-run"><strong>Preview a job</strong><span>Validate folder, output path, and image count with no model load.</span></a><a class="docs-card" href="#config-file"><strong>Repeatable family archive</strong><span>Keep a JSON config and override thresholds per trial.</span></a><a class="docs-card" href="#model-options"><strong>CPU-only laptop run</strong><span>Force CPU, smaller detector size, fewer workers.</span></a><a class="docs-card" href="/api/model-swapping/"><strong>Planning custom models?</strong><span>Watch the coming-soon Python API for detector, embedder, and grouping hooks.</span></a></div></section>
+        <section class="docs-section" id="exit-codes"><h2>Exit codes and automation</h2><div class="docs-table docs-table-compact"><div><strong>Code</strong><strong>Meaning</strong><strong>Common cause</strong></div><div><code>0</code><span>Success</span><span>Dry-run or processing completed.</span></div><div><code>1</code><span>User-correctable error</span><span>Bad path, no images, invalid config.</span></div><div><code>2</code><span>Cancelled</span><span>Interactive confirmation declined.</span></div><div><code>130</code><span>Interrupted</span><span>Keyboard interrupt.</span></div></div></section>
+        <section class="docs-section" id="api-vs-cli"><h2>CLI or Python API?</h2><p>Use the CLI now when you need path and config control from shell scripts. Use the Python API later, once it ships, for model injection, custom grouping, app callbacks, or staged detection/grouping.</p><div class="docs-next-grid"><a href="/api/">Python API overview</a><a href="/api/model-swapping/">Model swapping guide</a><a href="/api/reference/#providers">Provider protocols</a></div></section>
+
+            </article>
+            <aside class="docs-toc" aria-label="On this page">
+                <p class="docs-toc-title">On this page</p>
+                <a href="#install">Install</a>
+<a href="#dry-run">Dry-run</a>
+<a href="#commands">Commands</a>
+<a href="#config-file">Config JSON</a>
+<a href="#folder-options">Folders</a>
+<a href="#threshold-options">Thresholds</a>
+<a href="#model-options">Models</a>
+<a href="#recipes">Recipes</a>
+<a href="#exit-codes">Exit codes</a>
+<a href="#api-vs-cli">API vs CLI</a>
+            </aside>
+        </div>
+    </main>
+    <footer>
+        <div class="footer-content">
+            <div class="footer-links"><a href="/">Home</a><a href="/api/">Python API</a><a href="/api/how-to/">How-to</a><a href="/api/reference/">Reference</a><a href="/cli/">CLI</a><a href="/privacy/">Privacy Policy</a><a href="/archive/">Archive</a></div>
+            <p class="footer-credit">Made by Abdullah Khawaja</p>
+        </div>
+    </footer>
+    <script src="/js/main.js?v=obsidian-docs-2"></script>
+</body>
+</html>
+

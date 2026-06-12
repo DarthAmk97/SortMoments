@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sort Moments Python API model-swapping preview. Coming soon until PyPI packaging is verified; use the CLI from source today.">
+    <link rel="canonical" href="https://sortmoments.com/api/model-swapping/">
+    <title>Sort Moments model swapping - Coming Soon</title>
+    <link rel="stylesheet" href="/css/docs-obsidian.css?v=obsidian-docs-2">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+</head>
+<body>
+    <header>
+        <nav>
+            <a class="logo" href="/" aria-label="Sort Moments home">
+                <img src="/assets/sortmoments_logo_transparent.png" alt="Sort Moments logo" class="logo-image">
+                <span class="logo-text">Sort Moments</span>
+            </a>
+            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+            <div class="nav-links" id="navLinks">
+                <a href="/api/" class="nav-product-link">
+                    <span class="nav-icon" aria-hidden="true">{ }</span>
+                    <span class="nav-label">Python API</span>
+                    <span class="nav-sticker" aria-label="Coming soon">Soon</span>
+                </a>
+                <a href="/cli/" class="nav-product-link">
+                    <span class="nav-icon" aria-hidden="true">$</span>
+                    <span class="nav-label">CLI</span>
+                    <span class="nav-sticker" aria-label="Available">Live</span>
+                </a>
+                <a href="https://github.com/DarthAmk97/SortMoments" target="_blank" rel="noopener">GitHub</a>
+            </div>
+        </nav>
+    </header>
+    <main class="docs-page">
+        <div class="docs-shell">
+            <aside class="docs-sidebar" aria-label="Documentation navigation">
+                <p class="docs-sidebar-title">Docs</p>
+                <div class="docs-nav-group">
+<a href="/api/">Overview<span class="side-sticker">Soon</span></a>
+<a href="/api/how-to/">How-to</a>
+<a href="/api/reference/">Reference</a>
+<a href="/api/model-swapping/" class="active">Model swapping</a>
+<a href="/cli/">CLI<span class="side-sticker">Live</span></a>
+</div><p class="docs-sidebar-title">Project</p><div class="docs-nav-group"><a href="/">Home</a><a href="https://github.com/DarthAmk97/SortMoments" target="_blank" rel="noopener">GitHub</a><a href="https://github.com/DarthAmk97/SortMoments/issues" target="_blank" rel="noopener">Issues</a><a href="https://github.com/DarthAmk97/SortMoments/releases" target="_blank" rel="noopener">Releases</a><a href="/archive/">Archive</a></div>
+            </aside>
+            <article class="docs-main">
+                <section class="docs-hero">
+                    <div class="docs-eyebrow"><span class="docs-badge">Coming soon</span><span class="docs-route">/api/model-swapping/</span></div>
+                    <h1>Swap the model, keep the workflow.</h1>
+                    <p class="docs-lede">Bring your own detector, embedding extractor, InsightFace provider settings, or grouping algorithm while keeping Sort Moments' local folder workflow.</p>
+                </section>
+                <section class="docs-status-note docs-status-soon">
+                    <strong>Python API status: coming soon.</strong>
+                    <p>These docs describe the intended package surface. Do not treat the PyPI install path as live until the package, wheel metadata, and import surface are verified. For now, use the CLI from source.</p>
+                </section>
+                
+        <section class="docs-section" id="detector"><h2>Swap the face detector</h2><p>A detector can be an object with <span class="inline-code">get(image_rgb)</span> or a callable. Return objects compatible with <a href="/api/reference/#providers">FaceModel</a>: <span class="inline-code">bbox</span>, <span class="inline-code">det_score</span>, and optionally <span class="inline-code">embedding</span>.</p><pre class="code-block">from sortmoments import DetectedFace, SortMomentsOrganizer
+
+class MyDetector:
+    def get(self, image_rgb):
+        boxes = run_my_local_detector(image_rgb)
+        return [DetectedFace(bbox=box, det_score=0.98) for box in boxes]
+
+organizer = SortMomentsOrganizer(face_model=MyDetector())</pre></section>
+        <section class="docs-section" id="embedding"><h2>Swap the embedding model</h2><p>If your detector does not produce embeddings, supply a separate embedder. It can expose <span class="inline-code">embed(image_rgb, face)</span> or be a callable.</p><pre class="code-block">class MyEmbedder:
+    def embed(self, image_rgb, face):
+        crop = crop_face(image_rgb, face.bbox)
+        return my_embedding_model.encode(crop)</pre></section>
+        <section class="docs-section" id="insightface"><h2>Control the default InsightFace provider</h2><pre class="code-block">organizer = SortMomentsOrganizer(SortMomentsConfig(
+    model_name="buffalo_l",
+    det_size=(512, 512),
+    prefer_gpu=False,
+))</pre><p class="docs-mini-links">Reference: <a href="/api/reference/#performance">performance and model fields</a>.</p></section>
+        <section class="docs-section" id="grouping"><h2>Swap the grouping strategy</h2><p>A grouping strategy receives <span class="inline-code">FaceRecord</span> objects. Use this to enforce stricter clustering, known identities, album-specific rules, or a completely different algorithm.</p><pre class="code-block">class MyGrouping:
+    def group(self, face_records, similarity_threshold=0.5):
+        groups = {}
+        for record in face_records:
+            person_id = assign_with_my_clusterer(record.embedding)
+            groups.setdefault(person_id, []).append(record)
+        return groups</pre></section>
+        <section class="docs-section" id="known-identities"><h2>Known-person matching</h2><p>If you already have labeled reference embeddings, use a grouping model that compares every face to your known index before falling back to <span class="inline-code">rename_N</span>.</p><pre class="code-block">class KnownPeopleGrouping:
+    def __init__(self, reference_embeddings):
+        self.reference_embeddings = reference_embeddings
+
+    def group(self, face_records, similarity_threshold=0.62):
+        groups = {}
+        for record in face_records:
+            name, score = nearest_known_person(record.embedding, self.reference_embeddings)
+            person_id = name if score >= similarity_threshold else "review_unknown"
+            groups.setdefault(person_id, []).append(record)
+        return groups</pre></section>
+        <section class="docs-section" id="debugging"><h2>Debugging custom models</h2><ul><li>Set <span class="inline-code">keep_intermediate=True</span> so crops and embeddings stay on disk.</li><li>Start with a tiny folder of 5&ndash;10 images before batch processing thousands.</li><li>Use <a href="/api/how-to/#two-pass">two-pass workflows</a> to avoid rerunning detection while tuning grouping.</li><li>Use the <a href="/cli/#dry-run">CLI dry-run</a> for path/config validation before launching expensive jobs.</li></ul></section>
+        <section class="docs-section" id="contract"><h2>Contract and privacy assumptions</h2><div class="docs-callout">Sort Moments is local-first. Custom models should stay local unless the user explicitly chooses a remote model. Do not silently upload photos or crops.</div><ul><li>Detectors return face boxes in image pixel coordinates.</li><li>Embedders return numeric vectors or set <span class="inline-code">face.embedding</span>.</li><li>Grouping strategies return stable folder-safe person IDs.</li><li>Source images should not be mutated.</li></ul><p class="docs-mini-links">Reference protocols: <a href="/api/reference/#providers">Provider protocols</a>.</p></section>
+
+            </article>
+            <aside class="docs-toc" aria-label="On this page">
+                <p class="docs-toc-title">On this page</p>
+                <a href="#detector">Detector</a>
+<a href="#embedding">Embedding</a>
+<a href="#insightface">InsightFace</a>
+<a href="#grouping">Grouping</a>
+<a href="#known-identities">Known people</a>
+<a href="#debugging">Debugging</a>
+<a href="#contract">Contract</a>
+            </aside>
+        </div>
+    </main>
+    <footer>
+        <div class="footer-content">
+            <div class="footer-links"><a href="/">Home</a><a href="/api/">Python API</a><a href="/api/how-to/">How-to</a><a href="/api/reference/">Reference</a><a href="/cli/">CLI</a><a href="/privacy/">Privacy Policy</a><a href="/archive/">Archive</a></div>
+            <p class="footer-credit">Made by Abdullah Khawaja</p>
+        </div>
+    </footer>
+    <script src="/js/main.js?v=obsidian-docs-2"></script>
+</body>
+</html>
+

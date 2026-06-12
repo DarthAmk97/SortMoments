@@ -12,42 +12,50 @@ const CONFIG = {
 };
 
 /**
- * Fetch download count from server API
+ * Fetch public site stats from server API.
  */
-async function fetchDownloadCount() {
-    const countElement = document.getElementById('downloadCount');
+async function fetchSiteStats() {
+    const downloadElement = document.getElementById('downloadCount');
+    const visitorElement = document.getElementById('visitorCount');
+
+    if (!downloadElement && !visitorElement) return;
 
     try {
-        const response = await fetch('/api/counter');
+        const response = await fetch('/api/analytics', { cache: 'no-store' });
 
         if (!response.ok) {
             throw new Error(`Server returned ${response.status}`);
         }
 
         const data = await response.json();
-        const count = data.count || 0;
+        const downloads = data.downloads || 0;
+        const uniqueVisitors = data.unique_visitors || 0;
 
         // Update display
-        updateCountDisplay(count);
+        updateStatsDisplay(downloads, uniqueVisitors);
 
     } catch (error) {
-        console.error('Error fetching download count:', error);
+        console.error('Error fetching site stats:', error);
         // Show fallback
-        countElement.textContent = '0';
+        if (downloadElement) downloadElement.textContent = '0';
+        if (visitorElement) visitorElement.textContent = '0';
     }
 }
 
 /**
- * Update the download count display with animation
+ * Update stat displays with animation.
  */
-function updateCountDisplay(count) {
-    const countElement = document.getElementById('downloadCount');
+function updateStatsDisplay(downloads, uniqueVisitors) {
+    const downloadElement = document.getElementById('downloadCount');
+    const visitorElement = document.getElementById('visitorCount');
 
-    // Format number with commas
-    const formattedCount = count.toLocaleString();
+    if (downloadElement) {
+        animateValue(downloadElement, 0, downloads, 1000);
+    }
 
-    // Animate the count
-    animateValue(countElement, 0, count, 1000);
+    if (visitorElement) {
+        animateValue(visitorElement, 0, uniqueVisitors, 1000);
+    }
 }
 
 /**
@@ -74,29 +82,6 @@ function animateValue(element, start, end, duration) {
     requestAnimationFrame(update);
 }
 
-
-/**
- * Track download button click and increment counter on server
- */
-async function trackDownload() {
-    try {
-        const response = await fetch('/api/counter/increment');
-
-        if (!response.ok) {
-            throw new Error(`Server returned ${response.status}`);
-        }
-
-        const data = await response.json();
-        const newCount = data.count || 0;
-
-        // Update display with animation
-        updateCountDisplay(newCount);
-
-        console.log('Download initiated. Counter updated to:', newCount);
-    } catch (error) {
-        console.error('Error incrementing counter:', error);
-    }
-}
 
 /**
  * Initialize mobile menu toggle
@@ -231,14 +216,8 @@ function init() {
     // Hero title animation
     initShuffleTitle();
 
-    // Fetch and display download count
-    fetchDownloadCount();
-
-    // Add click tracking to download button
-    const downloadBtn = document.getElementById('downloadBtn');
-    if (downloadBtn) {
-        downloadBtn.addEventListener('click', trackDownload);
-    }
+    // Fetch and display public site stats
+    fetchSiteStats();
 
     // Smooth scroll for anchor links (if any)
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
