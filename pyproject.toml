@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=77.0.3", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sortmoments"
+version = "0.1.0"
+description = "Local-first Python API and CLI for organizing photos by people."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Abdullah Khawaja" }]
+keywords = ["photos", "face-recognition", "photo-organization", "computer-vision", "local-first"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Multimedia :: Graphics",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+  "opencv-python>=4.7.0",
+  "numpy>=1.21.0",
+  "Pillow>=9.0.0",
+  "insightface>=0.7.0",
+  "onnxruntime-directml>=1.15.0; platform_system == 'Windows'",
+  "onnxruntime>=1.15.0; platform_system != 'Windows'",
+]
+
+[project.optional-dependencies]
+gui = ["PyQt6>=6.4.0"]
+dev = ["build>=1.2.0"]
+
+[project.urls]
+Homepage = "https://sortmoments.com"
+Repository = "https://github.com/DarthAmk97/SortMoments"
+Issues = "https://github.com/DarthAmk97/SortMoments/issues"
+Documentation = "https://sortmoments.com/api/"
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["sortmoments*"]

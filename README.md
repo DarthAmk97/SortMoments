@@ -57,7 +57,57 @@ pip install -r requirements.txt
 python photo_organizer.py
 ```
 
-### Option 3: Build Your Own Executable
+### Option 3: Python Library Package (Coming Soon)
+
+Use this when you want Sort Moments inside your own Python scripts, notebooks,
+or backend jobs. This is the intended package surface, separate from the
+repo-based CLI. It is **not on PyPI yet**; keep using the source CLI until the
+wheel, metadata, and import surface are verified.
+
+```bash
+# planned, not live yet
+python -m pip install sortmoments
+```
+
+```python
+from sortmoments import SortMomentsConfig, organize_photos
+
+result = organize_photos(
+    "C:/path/to/photos",
+    config=SortMomentsConfig(similarity_threshold=0.58),
+)
+print(result.output_folder)
+```
+
+### Option 4: Run the No-GUI CLI from Source
+
+Use the source CLI when you want local batch processing from a terminal or
+script without launching the desktop GUI:
+
+```bash
+git clone https://github.com/DarthAmk97/SortMoments.git
+cd SortMoments
+python -m pip install -r requirements.txt
+
+# Preview what would be processed without loading the AI model
+python sortmoments_cli.py organize "C:\path\to\photos" --dry-run
+
+# Process photos into the default <input>/all_images_processed folder
+python sortmoments_cli.py organize "C:\path\to\photos" --yes
+
+# Choose a custom output folder and force CPU execution
+python sortmoments_cli.py organize "C:\path\to\photos" --output-folder "D:\sorted-photos" --cpu --yes
+```
+
+Useful options:
+
+- `--output-folder PATH` sets the final organized folder.
+- `--dry-run` validates paths and prints the plan without writing files.
+- `--confirm` asks for an interactive confirmation before processing.
+- `--config sortmoments.json` loads defaults from JSON; CLI flags override it.
+- `--cpu` / `--gpu`, `--model-name`, and `--det-size WIDTH HEIGHT` expose model hooks.
+
+### Option 5: Build Your Own Executable
 
 See [BUILDING.md](BUILDING.md) for detailed build instructions.
 
@@ -80,6 +130,81 @@ See [BUILDING.md](BUILDING.md) for detailed build instructions.
 2. **Embedding Creation** - Creates a unique mathematical representation for each face
 3. **Clustering** - Groups similar faces together (same person)
 4. **Organization** - Copies photos into person-specific folders
+
+---
+
+## Python Library API (Coming Soon)
+
+Sort Moments is being shaped into an importable Python API. The facade keeps
+the existing desktop pipeline defaults, while letting advanced users replace
+the face detector, embedding model, or grouping model. This section documents
+the target API shape; it is blocked on the PyPI release being verified.
+
+```bash
+# planned, not live yet
+python -m pip install sortmoments
+```
+
+This is the Python package surface. It is intentionally separate from the
+repo-based no-GUI CLI. For now, the CLI is the working terminal path and the
+package stays on hold until publishing is sorted.
+
+The package follows the Python Packaging User Guide pattern:
+
+```text
+SortMoments/
+├── LICENSE
+├── README.md
+├── pyproject.toml
+├── src/
+│   └── sortmoments/
+│       ├── __init__.py
+│       ├── api.py
+│       ├── models.py
+│       └── pipeline.py
+└── tests/
+```
+
+```python
+from sortmoments import SortMomentsConfig, SortMomentsOrganizer, organize_photos
+
+result = organize_photos(
+    "C:/path/to/photos",
+    config=SortMomentsConfig(similarity_threshold=0.5),
+)
+
+print(result.output_folder)
+print(result.person_count)
+```
+
+Custom models can be passed stage-by-stage:
+
+```python
+result = organize_photos(
+    "C:/path/to/photos",
+    face_model=my_detector,        # .get(image_rgb) or callable(image_rgb)
+    embedding_model=my_embedder,   # .embed(image_rgb, face) or callable
+    grouping_model=my_grouper,     # .group(face_records, similarity_threshold=...)
+)
+```
+
+For repeated jobs, create a configured organizer:
+
+```python
+organizer = SortMomentsOrganizer(
+    SortMomentsConfig(similarity_threshold=0.62),
+    face_model=my_detector,
+    embedding_model=my_embedder,
+    grouping_model=my_grouper,
+)
+result = organizer.organize("C:/path/to/photos")
+```
+
+Lower-level helpers are also available:
+
+- `detect_faces(...)` writes face crops and embeddings.
+- `group_faces(...)` groups previously detected faces.
+- `DetectedFace` is a small convenience object for custom detectors.
 
 ---
 
