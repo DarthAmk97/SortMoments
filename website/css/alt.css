@@ -1088,11 +1088,13 @@ html[dir="rtl"] .demo .section-intro {
     main, .footer { width: min(100% - 24px, 640px); }
     main > section { scroll-snap-align: none; }
     .hero {
-        padding-top: 48px;
+        padding-top: 0;
         scroll-snap-align: none;
     }
 
-    .hero-copy,
+    .hero-intro,
+    .hero-stats,
+    .hero-actions,
     .hero-media,
     .facts,
     .workflow .section-intro,
@@ -1102,16 +1104,62 @@ html[dir="rtl"] .demo .section-intro {
     .demo .section-intro,
     .video-frame,
     .faq .section-intro,
-    .faq-list article {
+    .faq-list article,
+    .footer {
+        position: relative;
+        min-height: calc(100svh - var(--header-space) - 18px);
+        display: grid;
+        align-content: center;
         scroll-snap-align: start;
         scroll-snap-stop: always;
         scroll-margin-top: 0;
     }
 
+    .hero-intro {
+        position: relative;
+        min-height: calc(100svh - var(--header-space) - 18px);
+        display: grid;
+        align-content: center;
+    }
+
+    .hero-stats,
+    .hero-actions {
+        position: relative;
+        min-height: calc(100svh - var(--header-space) - 18px);
+        display: grid;
+        align-content: center;
+    }
+
+    .hero-media,
+    .facts,
+    .workflow .section-intro,
+    .privacy > :not(.side-quips),
+    .developers .section-intro,
+    .demo .section-intro,
+    .video-frame,
+    .faq .section-intro {
+        min-height: calc(100svh - var(--header-space) - 18px);
+    }
+
+    .workflow-item,
+    .developer-card {
+        min-height: min(70svh, 520px);
+        align-self: center;
+    }
+
+    .hero-media,
+    .video-frame {
+        align-content: center;
+    }
+
+    .facts {
+        align-content: center;
+    }
+
     main > section:not(.hero) {
         align-content: start;
-        padding-top: calc(var(--header-space) + 22px);
-        padding-bottom: 62px;
+        padding-top: 0;
+        padding-bottom: 0;
     }
     h1 { font-size: clamp(3rem, 16vw, 4.8rem); line-height: 0.94; }
     h2 { font-size: clamp(2.35rem, 12vw, 3.7rem); line-height: 0.98; }
@@ -1157,6 +1205,69 @@ html[dir="rtl"] .demo .section-intro {
         line-height: 1.08;
         letter-spacing: -0.032em;
     }
+
+    .mobile-quip {
+        display: block;
+        position: absolute;
+        z-index: 0;
+        max-width: min(18ch, 58vw);
+        color: var(--hand-yellow);
+        font-family: var(--hand);
+        font-size: clamp(1rem, 5.2vw, 1.28rem);
+        font-style: normal;
+        font-weight: 740;
+        line-height: 1.08;
+        letter-spacing: -0.035em;
+        opacity: 0.72;
+        pointer-events: none;
+        text-wrap: balance;
+        transform: rotate(-4deg);
+    }
+
+    .mobile-quip::before { content: "“"; }
+    .mobile-quip::after { content: "”"; }
+
+    .mobile-stack {
+        isolation: isolate;
+    }
+
+    .mobile-stack > :not(.mobile-quip) {
+        position: relative;
+        z-index: 1;
+    }
+
+    .mobile-stack .mobile-quip {
+        right: clamp(6px, 4vw, 18px);
+        bottom: clamp(18px, 7svh, 54px);
+    }
+
+    .mobile-stack.is-mobile-stack-alt .mobile-quip {
+        right: auto;
+        left: clamp(6px, 4vw, 18px);
+        transform: rotate(4deg);
+    }
+
+    .hero-intro .mobile-quip,
+    .workflow .section-intro .mobile-quip,
+    .developers .section-intro .mobile-quip,
+    .demo .section-intro .mobile-quip {
+        bottom: clamp(10px, 4svh, 34px);
+    }
+
+    .workflow-item .mobile-quip,
+    .developer-card .mobile-quip,
+    .video-frame .mobile-quip {
+        bottom: auto;
+        top: clamp(14px, 5svh, 34px);
+        right: clamp(16px, 6vw, 28px);
+        opacity: 0.8;
+    }
+
+    .facts .mobile-quip {
+        top: clamp(10px, 4svh, 30px);
+        bottom: auto;
+    }
+
     .dev-status {
         top: 32px;
         right: 64px;

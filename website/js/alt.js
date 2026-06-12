@@ -5,6 +5,7 @@
     const languageToggle = document.querySelector('[data-language-toggle]');
     let currentLanguage = getInitialLanguage();
     let refreshCarouselLanguage = null;
+    let refreshMobileStacks = null;
     let latestStats = null;
 
     const copy = {
@@ -332,6 +333,7 @@
 
         updateCarouselControls();
         if (refreshCarouselLanguage) refreshCarouselLanguage();
+        if (refreshMobileStacks) refreshMobileStacks();
         updateStatsSourceCopy();
 
         if (persist) {
@@ -482,20 +484,28 @@
 
     function initStackScroller() {
         const mobileStack = window.matchMedia('(max-width: 720px)');
-        const stackSelectors = [
-            '.hero-copy',
-            '.hero-media',
-            '.facts',
-            '.workflow .section-intro',
-            '.workflow-item',
-            '.privacy > :not(.side-quips)',
-            '.developers .section-intro',
-            '.developer-card',
-            '.demo .section-intro',
-            '.video-frame',
-            '.faq .section-intro',
-            '.faq-list article',
-            '.footer',
+        const stackDefinitions = [
+            { selector: '.hero-intro', quip: { en: 'normal folders. abnormal relief.', ur: 'عام فولڈرز۔ غیر معمولی سکون۔' } },
+            { selector: '.hero-stats', quip: { en: 'public numbers. dangerously adult.', ur: 'public numbers۔ کافی adult۔' } },
+            { selector: '.hero-actions', quip: { en: 'download buttons. subtle concept.', ur: 'download buttons۔ سادہ concept۔' } },
+            { selector: '.hero-media', quip: { en: 'proof, but make it less keynote.', ur: 'ثبوت، مگر keynote کم۔' } },
+            { selector: '.facts', quip: { en: 'receipts, because vibes are not analytics.', ur: 'رسیدیں، کیونکہ vibes analytics نہیں۔' } },
+            { selector: '.workflow .section-intro', quip: { en: 'yes, this is the boring part. good.', ur: 'ہاں، یہ boring part ہے۔ اچھا ہے۔' } },
+            { selector: '.workflow-item:nth-child(1)', quip: { en: 'pick the crime scene.', ur: 'گڑبڑ والی جگہ چنیں۔' } },
+            { selector: '.workflow-item:nth-child(2)', quip: { en: 'the machine guesses. you decide.', ur: 'مشین اندازہ لگاتی ہے۔ فیصلہ آپ کرتے ہیں۔' } },
+            { selector: '.workflow-item:nth-child(3)', quip: { en: 'folders. finally acting normal.', ur: 'فولڈرز۔ آخرکار نارمل۔' } },
+            { selector: '.privacy > .reveal-left', quip: { en: 'privacy policy, minus the hostage note.', ur: 'privacy policy، hostage note کے بغیر۔' } },
+            { selector: '.privacy-copy', quip: { en: 'no upload ritual. refreshing.', ur: 'upload ritual نہیں۔ تازگی۔' } },
+            { selector: '.developers .section-intro', quip: { en: 'terminal people, assemble quietly.', ur: 'terminal والے، خاموشی سے جمع ہوں۔' } },
+            { selector: '.developer-card:nth-child(1)', quip: { en: 'locked because pretending is worse.', ur: 'locked، کیونکہ pretend کرنا worse ہے۔' } },
+            { selector: '.developer-card:nth-child(2)', quip: { en: 'CLI users love a good rectangle.', ur: 'CLI users کو اچھا rectangle پسند ہے۔' } },
+            { selector: '.demo .section-intro', quip: { en: 'great, another demo video :sigh:', ur: 'زبردست، ایک اور demo video :sigh:' } },
+            { selector: '.video-frame', quip: { en: 'twenty seconds. survivable.', ur: 'بیس سیکنڈ۔ برداشت ہو جائے گا۔' } },
+            { selector: '.faq .section-intro', quip: { en: 'answers before the email thread.', ur: 'email thread سے پہلے answers۔' } },
+            { selector: '.faq-list article:nth-child(1)', quip: { en: 'no cloud confession here.', ur: 'یہاں cloud confession نہیں۔' } },
+            { selector: '.faq-list article:nth-child(2)', quip: { en: 'platforms, because computers vary.', ur: 'platforms، کیونکہ computers مختلف ہوتے ہیں۔' } },
+            { selector: '.faq-list article:nth-child(3)', quip: { en: 'free. suspicious, but documented.', ur: 'free۔ suspicious، مگر documented۔' } },
+            { selector: '.footer', quip: { en: 'you made it. improbable.', ur: 'آپ پہنچ گئے۔ حیران کن۔' } },
         ];
         let stacks = [];
         let locked = false;
@@ -503,10 +513,13 @@
         let touchConsumed = false;
 
         function refreshStacks() {
-            stacks = stackSelectors
-                .flatMap((selector) => Array.from(document.querySelectorAll(selector)))
-                .filter((element, index, list) => list.indexOf(element) === index)
-                .filter((element) => element.getBoundingClientRect().height > 24);
+            stacks = stackDefinitions
+                .flatMap((definition) => {
+                    return Array.from(document.querySelectorAll(definition.selector)).map((element) => ({ element, definition }));
+                })
+                .filter((entry, index, list) => list.findIndex((item) => item.element === entry.element) === index)
+                .filter((entry) => entry.element.getBoundingClientRect().height > 24);
+            stacks.forEach(({ element, definition }, index) => prepareStack(element, definition, index));
         }
 
         function isInteractiveTarget(target) {
@@ -523,7 +536,7 @@
             const offset = stackOffset();
             let nearest = 0;
             let nearestDistance = Number.POSITIVE_INFINITY;
-            stacks.forEach((element, index) => {
+            stacks.forEach(({ element }, index) => {
                 const distance = Math.abs(element.getBoundingClientRect().top - offset);
                 if (distance < nearestDistance) {
                     nearest = index;
@@ -540,7 +553,7 @@
 
             const current = nearestStackIndex();
             const next = Math.max(0, Math.min(stacks.length - 1, current + direction));
-            const target = stacks[next];
+            const target = stacks[next]?.element;
             if (!target || next === current) return;
 
             locked = true;
@@ -550,6 +563,7 @@
         }
 
         refreshStacks();
+        refreshMobileStacks = refreshStacks;
         window.addEventListener('resize', refreshStacks);
         window.addEventListener('load', refreshStacks);
 
@@ -579,6 +593,20 @@
             touchStartY = 0;
             touchConsumed = false;
         }, { passive: true });
+
+        function prepareStack(element, definition, index) {
+            element.classList.add('mobile-stack');
+            element.classList.toggle('is-mobile-stack-alt', index % 2 === 1);
+            element.style.setProperty('--stack-index', String(index));
+            let quip = element.querySelector(':scope > .mobile-quip');
+            if (!quip) {
+                quip = document.createElement('span');
+                quip.className = 'mobile-quip';
+                quip.setAttribute('aria-hidden', 'true');
+                element.appendChild(quip);
+            }
+            quip.textContent = definition.quip[currentLanguage] || definition.quip.en;
+        }
     }
 
     async function initStats() {
