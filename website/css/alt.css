@@ -1057,6 +1057,11 @@ html[dir="rtl"] .demo .section-intro {
 }
 
 @media (max-width: 720px) {
+    html {
+        scroll-padding-top: calc(var(--header-space) + 10px);
+        scroll-snap-type: none;
+    }
+
     .site-header { padding: 10px 10px 0; }
     .nav { min-height: 58px; border-radius: 16px; }
     .menu-button { display: block; }
@@ -1081,7 +1086,28 @@ html[dir="rtl"] .demo .section-intro {
     .nav-links a,
     .language-toggle { justify-content: center; background: rgba(244, 236, 216, 0.08); }
     main, .footer { width: min(100% - 24px, 640px); }
-    .hero { padding-top: 48px; }
+    main > section { scroll-snap-align: none; }
+    .hero {
+        padding-top: 48px;
+        scroll-snap-align: none;
+    }
+
+    .hero-copy,
+    .hero-media,
+    .facts,
+    .workflow .section-intro,
+    .workflow-item,
+    .privacy > :not(.side-quips),
+    .developer-card,
+    .demo .section-intro,
+    .video-frame,
+    .faq .section-intro,
+    .faq-list article {
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+        scroll-margin-top: 0;
+    }
+
     main > section:not(.hero) {
         align-content: start;
         padding-top: calc(var(--header-space) + 22px);
@@ -1093,10 +1119,48 @@ html[dir="rtl"] .demo .section-intro {
     .hero-carousel figcaption { grid-template-columns: 1fr; gap: 0.2rem; }
     .hero-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .facts, .developer-grid { grid-template-columns: 1fr; }
+    .hand-note {
+        font-family: var(--font);
+        font-style: italic;
+        font-weight: 780;
+        letter-spacing: -0.014em;
+        line-height: 1.18;
+        text-shadow: none;
+    }
+    .hero-stats dt.hand-note {
+        font-family: var(--font);
+        font-style: italic;
+        font-weight: 780;
+        font-size: 0.86rem;
+        letter-spacing: 0;
+    }
+    .hero-carousel figcaption .hand-note {
+        font-family: var(--font);
+        font-style: italic;
+        font-weight: 780;
+        font-size: 0.98rem;
+        line-height: 1.45;
+    }
+    .facts strong.hand-note,
+    .facts .stat-word {
+        font-family: var(--font);
+        font-style: italic;
+        font-weight: 780;
+        font-size: 1rem;
+    }
+    .step-copy h3.hand-note {
+        font-family: var(--font);
+        font-style: italic;
+        font-weight: 820;
+        max-width: 16ch;
+        font-size: clamp(1.38rem, 8.4vw, 2.05rem);
+        line-height: 1.08;
+        letter-spacing: -0.032em;
+    }
     .dev-status {
         top: 32px;
         right: 64px;
-        font-size: 1rem;
+        font-size: 0.92rem;
         transform: rotate(-5deg);
     }
     .developer-grid .is-locked strong { padding-right: 0; }

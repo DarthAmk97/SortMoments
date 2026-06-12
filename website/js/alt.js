@@ -269,6 +269,7 @@
     initStats();
     initCarousel();
     initScrollEffects();
+    initStackScroller();
 
     if (button && nav) {
         button.addEventListener('click', () => {
@@ -477,6 +478,107 @@
         const visible = Math.min(0.72, Math.max(0, progress * 1.45));
         document.documentElement.style.setProperty('--scroll-progress', progress.toFixed(4));
         document.documentElement.style.setProperty('--veil-opacity', visible.toFixed(3));
+    }
+
+    function initStackScroller() {
+        const mobileStack = window.matchMedia('(max-width: 720px)');
+        const stackSelectors = [
+            '.hero-copy',
+            '.hero-media',
+            '.facts',
+            '.workflow .section-intro',
+            '.workflow-item',
+            '.privacy > :not(.side-quips)',
+            '.developers .section-intro',
+            '.developer-card',
+            '.demo .section-intro',
+            '.video-frame',
+            '.faq .section-intro',
+            '.faq-list article',
+            '.footer',
+        ];
+        let stacks = [];
+        let locked = false;
+        let touchStartY = 0;
+        let touchConsumed = false;
+
+        function refreshStacks() {
+            stacks = stackSelectors
+                .flatMap((selector) => Array.from(document.querySelectorAll(selector)))
+                .filter((element, index, list) => list.indexOf(element) === index)
+                .filter((element) => element.getBoundingClientRect().height > 24);
+        }
+
+        function isInteractiveTarget(target) {
+            if (!target || typeof target.closest !== 'function') return false;
+            return Boolean(target.closest('a, button, input, textarea, select, video, .nav-links, .carousel-controls'));
+        }
+
+        function stackOffset() {
+            const navRect = document.querySelector('.site-header')?.getBoundingClientRect();
+            return Math.round((navRect?.bottom || 82) + 12);
+        }
+
+        function nearestStackIndex() {
+            const offset = stackOffset();
+            let nearest = 0;
+            let nearestDistance = Number.POSITIVE_INFINITY;
+            stacks.forEach((element, index) => {
+                const distance = Math.abs(element.getBoundingClientRect().top - offset);
+                if (distance < nearestDistance) {
+                    nearest = index;
+                    nearestDistance = distance;
+                }
+            });
+            return nearest;
+        }
+
+        function go(direction) {
+            if (!mobileStack.matches || reduceMotion || locked) return;
+            if (!stacks.length) refreshStacks();
+            if (!stacks.length) return;
+
+            const current = nearestStackIndex();
+            const next = Math.max(0, Math.min(stacks.length - 1, current + direction));
+            const target = stacks[next];
+            if (!target || next === current) return;
+
+            locked = true;
+            const top = target.getBoundingClientRect().top + window.scrollY - stackOffset();
+            window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+            window.setTimeout(() => { locked = false; }, 620);
+        }
+
+        refreshStacks();
+        window.addEventListener('resize', refreshStacks);
+        window.addEventListener('load', refreshStacks);
+
+        window.addEventListener('wheel', (event) => {
+            if (!mobileStack.matches || Math.abs(event.deltaY) < 12 || isInteractiveTarget(event.target)) return;
+            event.preventDefault();
+            go(event.deltaY > 0 ? 1 : -1);
+        }, { passive: false });
+
+        window.addEventListener('touchstart', (event) => {
+            if (!mobileStack.matches || isInteractiveTarget(event.target)) return;
+            touchStartY = event.touches[0]?.clientY || 0;
+            touchConsumed = false;
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (event) => {
+            if (!mobileStack.matches || touchConsumed || isInteractiveTarget(event.target)) return;
+            const currentY = event.touches[0]?.clientY || touchStartY;
+            const delta = touchStartY - currentY;
+            if (Math.abs(delta) < 46) return;
+            event.preventDefault();
+            touchConsumed = true;
+            go(delta > 0 ? 1 : -1);
+        }, { passive: false });
+
+        window.addEventListener('touchend', () => {
+            touchStartY = 0;
+            touchConsumed = false;
+        }, { passive: true });
     }
 
     async function initStats() {
