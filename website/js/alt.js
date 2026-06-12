@@ -485,27 +485,11 @@
     function initStackScroller() {
         const mobileStack = window.matchMedia('(max-width: 720px)');
         const stackDefinitions = [
-            { selector: '.hero-intro', quip: { en: 'normal folders. abnormal relief.', ur: 'عام فولڈرز۔ غیر معمولی سکون۔' } },
-            { selector: '.hero-stats', quip: { en: 'public numbers. dangerously adult.', ur: 'public numbers۔ کافی adult۔' } },
-            { selector: '.hero-actions', quip: { en: 'download buttons. subtle concept.', ur: 'download buttons۔ سادہ concept۔' } },
-            { selector: '.hero-media', quip: { en: 'proof, but make it less keynote.', ur: 'ثبوت، مگر keynote کم۔' } },
-            { selector: '.facts', quip: { en: 'receipts, because vibes are not analytics.', ur: 'رسیدیں، کیونکہ vibes analytics نہیں۔' } },
-            { selector: '.workflow .section-intro', quip: { en: 'yes, this is the boring part. good.', ur: 'ہاں، یہ boring part ہے۔ اچھا ہے۔' } },
-            { selector: '.workflow-item:nth-child(1)', quip: { en: 'pick the crime scene.', ur: 'گڑبڑ والی جگہ چنیں۔' } },
-            { selector: '.workflow-item:nth-child(2)', quip: { en: 'the machine guesses. you decide.', ur: 'مشین اندازہ لگاتی ہے۔ فیصلہ آپ کرتے ہیں۔' } },
-            { selector: '.workflow-item:nth-child(3)', quip: { en: 'folders. finally acting normal.', ur: 'فولڈرز۔ آخرکار نارمل۔' } },
-            { selector: '.privacy > .reveal-left', quip: { en: 'privacy policy, minus the hostage note.', ur: 'privacy policy، hostage note کے بغیر۔' } },
-            { selector: '.privacy-copy', quip: { en: 'no upload ritual. refreshing.', ur: 'upload ritual نہیں۔ تازگی۔' } },
-            { selector: '.developers .section-intro', quip: { en: 'terminal people, assemble quietly.', ur: 'terminal والے، خاموشی سے جمع ہوں۔' } },
-            { selector: '.developer-card:nth-child(1)', quip: { en: 'locked because pretending is worse.', ur: 'locked، کیونکہ pretend کرنا worse ہے۔' } },
-            { selector: '.developer-card:nth-child(2)', quip: { en: 'CLI users love a good rectangle.', ur: 'CLI users کو اچھا rectangle پسند ہے۔' } },
-            { selector: '.demo .section-intro', quip: { en: 'great, another demo video :sigh:', ur: 'زبردست، ایک اور demo video :sigh:' } },
-            { selector: '.video-frame', quip: { en: 'twenty seconds. survivable.', ur: 'بیس سیکنڈ۔ برداشت ہو جائے گا۔' } },
-            { selector: '.faq .section-intro', quip: { en: 'answers before the email thread.', ur: 'email thread سے پہلے answers۔' } },
-            { selector: '.faq-list article:nth-child(1)', quip: { en: 'no cloud confession here.', ur: 'یہاں cloud confession نہیں۔' } },
-            { selector: '.faq-list article:nth-child(2)', quip: { en: 'platforms, because computers vary.', ur: 'platforms، کیونکہ computers مختلف ہوتے ہیں۔' } },
-            { selector: '.faq-list article:nth-child(3)', quip: { en: 'free. suspicious, but documented.', ur: 'free۔ suspicious، مگر documented۔' } },
-            { selector: '.footer', quip: { en: 'you made it. improbable.', ur: 'آپ پہنچ گئے۔ حیران کن۔' } },
+            { selector: '.hero' },
+            { selector: '#workflow', quipKey: 'workflowQuipOne' },
+            { selector: '#privacy', quipKey: 'privacyQuipOne' },
+            { selector: '#developers', quipKey: 'developersQuipOne' },
+            { selector: '#demo', quipKey: 'demoQuipOne' },
         ];
         let stacks = [];
         let locked = false;
@@ -599,13 +583,17 @@
             element.classList.toggle('is-mobile-stack-alt', index % 2 === 1);
             element.style.setProperty('--stack-index', String(index));
             let quip = element.querySelector(':scope > .mobile-quip');
+            if (!definition.quipKey) {
+                if (quip) quip.remove();
+                return;
+            }
             if (!quip) {
                 quip = document.createElement('span');
-                quip.className = 'mobile-quip';
+                quip.className = 'mobile-quip hand-note';
                 quip.setAttribute('aria-hidden', 'true');
                 element.appendChild(quip);
             }
-            quip.textContent = definition.quip[currentLanguage] || definition.quip.en;
+            quip.textContent = copy[currentLanguage][definition.quipKey] || copy.en[definition.quipKey];
         }
     }
 

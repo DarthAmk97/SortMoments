@@ -1087,25 +1087,12 @@ html[dir="rtl"] .demo .section-intro {
     .language-toggle { justify-content: center; background: rgba(244, 236, 216, 0.08); }
     main, .footer { width: min(100% - 24px, 640px); }
     main > section { scroll-snap-align: none; }
-    .hero {
-        padding-top: 0;
-        scroll-snap-align: none;
-    }
 
-    .hero-intro,
-    .hero-stats,
-    .hero-actions,
-    .hero-media,
-    .facts,
-    .workflow .section-intro,
-    .workflow-item,
-    .privacy > :not(.side-quips),
-    .developer-card,
-    .demo .section-intro,
-    .video-frame,
-    .faq .section-intro,
-    .faq-list article,
-    .footer {
+    .hero,
+    #workflow,
+    #privacy,
+    #developers,
+    #demo {
         position: relative;
         min-height: calc(100svh - var(--header-space) - 18px);
         display: grid;
@@ -1115,110 +1102,191 @@ html[dir="rtl"] .demo .section-intro {
         scroll-margin-top: 0;
     }
 
-    .hero-intro {
-        position: relative;
-        min-height: calc(100svh - var(--header-space) - 18px);
-        display: grid;
-        align-content: center;
-    }
-
-    .hero-stats,
-    .hero-actions {
-        position: relative;
-        min-height: calc(100svh - var(--header-space) - 18px);
-        display: grid;
-        align-content: center;
-    }
-
-    .hero-media,
-    .facts,
-    .workflow .section-intro,
-    .privacy > :not(.side-quips),
-    .developers .section-intro,
-    .demo .section-intro,
-    .video-frame,
-    .faq .section-intro {
-        min-height: calc(100svh - var(--header-space) - 18px);
-    }
-
-    .workflow-item,
-    .developer-card {
-        min-height: min(70svh, 520px);
-        align-self: center;
-    }
-
-    .hero-media,
-    .video-frame {
-        align-content: center;
-    }
-
-    .facts {
-        align-content: center;
-    }
-
-    main > section:not(.hero) {
-        align-content: start;
+    .hero {
+        grid-template-columns: 1fr;
+        gap: clamp(0.62rem, 1.8svh, 0.9rem);
         padding-top: 0;
         padding-bottom: 0;
     }
-    h1 { font-size: clamp(3rem, 16vw, 4.8rem); line-height: 0.94; }
-    h2 { font-size: clamp(2.35rem, 12vw, 3.7rem); line-height: 0.98; }
-    .hero-actions, .button { width: 100%; }
-    .hero-carousel figcaption { grid-template-columns: 1fr; gap: 0.2rem; }
-    .hero-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .facts, .developer-grid { grid-template-columns: 1fr; }
-    .hand-note {
-        font-family: var(--font);
-        font-style: normal;
-        font-weight: 780;
-        letter-spacing: -0.014em;
-        line-height: 1.18;
-        text-shadow: none;
+
+    .hero-copy {
+        display: grid;
+        gap: clamp(0.62rem, 1.8svh, 0.9rem);
     }
-    .hero-stats dt.hand-note {
-        font-family: var(--font);
-        font-style: normal;
-        font-weight: 780;
-        font-size: 0.86rem;
-        letter-spacing: 0;
+
+    .hero-intro { display: block; }
+    .hero-media,
+    .facts { display: none; }
+
+    main > section:not(.hero) {
+        align-content: center;
+        padding-top: 0;
+        padding-bottom: 0;
     }
-    .hero-carousel figcaption .hand-note {
-        font-family: var(--font);
-        font-style: normal;
-        font-weight: 780;
-        font-size: 0.98rem;
-        line-height: 1.45;
+
+    h1 {
+        max-width: 10.8ch;
+        margin-bottom: clamp(0.55rem, 1.5svh, 0.8rem);
+        font-size: clamp(2.48rem, 12.8vw, 4.25rem);
+        line-height: 0.91;
     }
-    .facts strong.hand-note,
-    .facts .stat-word {
-        font-family: var(--font);
-        font-style: normal;
-        font-weight: 780;
-        font-size: 1rem;
+
+    h2 {
+        margin-bottom: clamp(0.68rem, 2svh, 1rem);
+        font-size: clamp(2.1rem, 10.5vw, 3.45rem);
+        line-height: 0.96;
     }
+
+    .overline { margin-bottom: 0.55rem; }
+    .hero-text {
+        margin-bottom: 0;
+        font-size: clamp(0.9rem, 4.1vw, 1rem);
+        line-height: 1.42;
+    }
+
+    .hero-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.55rem;
+        margin: 0;
+    }
+
+    .hero-stats div { padding: 0.56rem 0.68rem; }
+    .hero-stats dd { font-size: clamp(1.22rem, 6.2vw, 1.55rem); }
+
+    .hero-actions {
+        width: 100%;
+        display: grid;
+        gap: 0.55rem;
+    }
+
+    .button {
+        width: 100%;
+        min-height: 50px;
+        padding: 0.58rem 0.9rem;
+        border-radius: 9px;
+    }
+
+    .button span { margin-top: 0.15rem; font-size: 0.72rem; }
+
+    .workflow-list,
+    .developer-grid,
+    .faq-list { grid-template-columns: 1fr; }
+
+    .workflow .section-intro,
+    .developers .section-intro,
+    .demo .section-intro {
+        margin-bottom: clamp(0.55rem, 1.8svh, 0.95rem);
+    }
+
+    .section-intro p:not(.overline),
+    .privacy-copy {
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    .workflow-list {
+        gap: 0.42rem;
+    }
+
+    .workflow-item {
+        min-height: 0;
+        padding: 0.42rem 0.58rem;
+    }
+
+    .step-copy span {
+        margin-bottom: 0.14rem;
+        font-size: 0.62rem;
+    }
+
+    #workflow .step-copy {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        column-gap: 0.55rem;
+        align-items: start;
+    }
+
+    #workflow .step-copy span {
+        grid-row: 1 / 3;
+        margin: 0.12rem 0 0;
+    }
+
     .step-copy h3.hand-note {
-        font-family: var(--font);
-        font-style: italic;
-        font-weight: 820;
-        max-width: 16ch;
-        font-size: clamp(1.38rem, 8.4vw, 2.05rem);
-        line-height: 1.08;
-        letter-spacing: -0.032em;
+        max-width: none;
+        margin-bottom: 0.18rem;
+        font-size: clamp(1rem, 5.5vw, 1.38rem);
+        line-height: 1.02;
+    }
+
+    .step-copy p {
+        font-size: 0.68rem;
+        line-height: 1.24;
+    }
+
+    #workflow .step-copy p {
+        display: -webkit-box;
+        overflow: hidden;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+    }
+
+    #workflow .step-copy h3.hand-note {
+        margin-bottom: 0.1rem;
+        font-size: clamp(0.96rem, 5vw, 1.24rem);
+    }
+
+    #workflow h2,
+    #developers h2 {
+        max-width: 10.5ch;
+        font-size: clamp(1.74rem, 8.4vw, 2.85rem);
+        line-height: 0.94;
+    }
+
+    #workflow .section-intro p:not(.overline) {
+        display: none;
+    }
+
+    #privacy,
+    #developers {
+        gap: clamp(0.9rem, 3svh, 1.35rem);
+    }
+
+    .developer-grid {
+        gap: 0.48rem;
+    }
+
+    .developer-card {
+        min-height: 0;
+        padding: 0.72rem;
+    }
+
+    .developer-grid .dev-kicker { font-size: 0.66rem; }
+    .developer-grid strong {
+        max-width: 17ch;
+        margin: 0.55rem 0 0.58rem;
+        font-size: clamp(1.05rem, 5.7vw, 1.52rem);
+        line-height: 1.02;
+    }
+
+    code {
+        max-width: 100%;
+        margin-top: 0;
+        padding: 0.42rem 0.5rem;
+        font-size: 0.62rem;
     }
 
     .mobile-quip {
         display: block;
         position: absolute;
         z-index: 0;
-        max-width: min(18ch, 58vw);
+        max-width: min(18ch, 62vw);
         color: var(--hand-yellow);
         font-family: var(--hand);
-        font-size: clamp(1rem, 5.2vw, 1.28rem);
+        font-size: clamp(0.98rem, 5vw, 1.28rem);
         font-style: normal;
-        font-weight: 740;
+        font-weight: 700;
         line-height: 1.08;
         letter-spacing: -0.035em;
-        opacity: 0.72;
+        opacity: 0.88;
         pointer-events: none;
         text-wrap: balance;
         transform: rotate(-4deg);
@@ -1236,36 +1304,50 @@ html[dir="rtl"] .demo .section-intro {
         z-index: 1;
     }
 
+    .mobile-stack > .mobile-quip {
+        position: absolute;
+        z-index: 0;
+    }
+
     .mobile-stack .mobile-quip {
-        right: clamp(6px, 4vw, 18px);
-        bottom: clamp(18px, 7svh, 54px);
+        right: clamp(8px, 4vw, 18px);
+        bottom: clamp(10px, 4svh, 28px);
     }
 
     .mobile-stack.is-mobile-stack-alt .mobile-quip {
         right: auto;
-        left: clamp(6px, 4vw, 18px);
+        left: clamp(8px, 4vw, 18px);
         transform: rotate(4deg);
     }
 
-    .hero-intro .mobile-quip,
-    .workflow .section-intro .mobile-quip,
-    .developers .section-intro .mobile-quip,
-    .demo .section-intro .mobile-quip {
-        bottom: clamp(10px, 4svh, 34px);
+    #workflow .mobile-quip {
+        left: auto;
+        right: clamp(8px, 4vw, 18px);
+        top: auto;
+        bottom: clamp(4px, 1.5svh, 12px);
+        max-width: 14ch;
+        font-size: clamp(0.86rem, 4.5vw, 1rem);
     }
 
-    .workflow-item .mobile-quip,
-    .developer-card .mobile-quip,
-    .video-frame .mobile-quip {
-        bottom: auto;
-        top: clamp(14px, 5svh, 34px);
-        right: clamp(16px, 6vw, 28px);
-        opacity: 0.8;
+    #privacy .mobile-quip {
+        left: clamp(8px, 4vw, 18px);
+        right: auto;
+        bottom: clamp(8px, 3svh, 22px);
+        transform: rotate(4deg);
     }
 
-    .facts .mobile-quip {
-        top: clamp(10px, 4svh, 30px);
-        bottom: auto;
+    #developers .mobile-quip {
+        right: clamp(8px, 4vw, 18px);
+        bottom: clamp(6px, 2svh, 16px);
+        max-width: 14ch;
+        font-size: clamp(0.86rem, 4.5vw, 1rem);
+    }
+
+    #demo .mobile-quip {
+        left: clamp(8px, 4vw, 18px);
+        right: auto;
+        bottom: clamp(8px, 3svh, 22px);
+        transform: rotate(4deg);
     }
 
     .dev-status {
@@ -1275,11 +1357,8 @@ html[dir="rtl"] .demo .section-intro {
         transform: rotate(-5deg);
     }
     .developer-grid .is-locked strong { padding-right: 0; }
-    .facts div:nth-child(n) { border-left: 0; }
-    .facts div + div { border-top: 1px solid var(--line); }
-    .workflow-item { padding: 16px; }
-    .faq-list { grid-template-columns: 1fr; gap: 0; }
-    .privacy-copy, .section-intro p:not(.overline) { font-size: 1rem; }
+    .faq { display: none; }
+    .privacy-copy, .section-intro p:not(.overline) { font-size: 0.95rem; }
     .footer { display: grid; }
     .motion-ready .reveal-left { transform: translate3d(-8px, 0, 0); }
     .motion-ready .reveal-right { transform: translate3d(8px, 0, 0); }
