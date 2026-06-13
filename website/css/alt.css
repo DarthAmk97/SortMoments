@@ -1373,11 +1373,13 @@ html[dir="rtl"] .demo .section-intro {
     }
 
     #developers .mobile-quip {
-        left: auto;
-        right: clamp(8px, 4vw, 18px);
-        bottom: clamp(6px, 2svh, 16px);
-        max-width: 14ch;
+        position: static;
+        z-index: 1;
+        width: max-content;
+        max-width: min(14ch, 58vw);
+        margin: clamp(0.74rem, 2svh, 1.12rem) clamp(1.25rem, 12vw, 3.25rem) 0 auto;
         font-size: var(--hand-note-size);
+        transform: rotate(4deg);
     }
 
     #demo .mobile-quip {
