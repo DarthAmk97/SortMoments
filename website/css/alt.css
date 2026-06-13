@@ -26,6 +26,10 @@
     --hand: "Segoe Print", "Bradley Hand ITC", "Comic Sans MS", cursive;
     --urdu-font: "Noto Nastaliq Urdu", "Jameel Noori Nastaleeq", "Noto Naskh Arabic", "Urdu Typesetting", "Segoe UI", Tahoma, sans-serif;
     --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    --hand-note-size: clamp(1rem, 1.1vw, 1.42rem);
+    --hand-note-leading: 1.08;
+    --hand-note-tracking: -0.035em;
+    --hand-note-opacity: 0.9;
     --veil-opacity: 0;
     --scroll-progress: 0;
     --header-space: 92px;
@@ -541,10 +545,10 @@ main > section:not(.hero) {
     max-width: 260px;
     margin: 0;
     color: var(--hand-yellow);
-    font-size: clamp(1rem, 1.1vw, 1.42rem);
-    line-height: 1.08;
-    letter-spacing: -0.035em;
-    opacity: 0.9;
+    font-size: var(--hand-note-size);
+    line-height: var(--hand-note-leading);
+    letter-spacing: var(--hand-note-tracking);
+    opacity: var(--hand-note-opacity);
     text-wrap: balance;
 }
 
@@ -1288,11 +1292,11 @@ html[dir="rtl"] .demo .section-intro {
         max-width: min(18ch, 62vw);
         color: var(--hand-yellow);
         font-family: var(--hand);
-        font-size: clamp(0.98rem, 5vw, 1.28rem);
+        font-size: var(--hand-note-size);
         font-style: normal;
         font-weight: 700;
-        line-height: 1.08;
-        letter-spacing: -0.035em;
+        line-height: var(--hand-note-leading);
+        letter-spacing: var(--hand-note-tracking);
         opacity: 0;
         visibility: hidden;
         pointer-events: none;
@@ -1319,7 +1323,7 @@ html[dir="rtl"] .demo .section-intro {
     }
 
     .mobile-stack.is-active-stack > .mobile-quip {
-        opacity: 0.88;
+        opacity: var(--hand-note-opacity);
         visibility: visible;
     }
 
@@ -1340,7 +1344,7 @@ html[dir="rtl"] .demo .section-intro {
         top: auto;
         bottom: clamp(4px, 1.5svh, 12px);
         max-width: 14ch;
-        font-size: clamp(0.86rem, 4.5vw, 1rem);
+        font-size: var(--hand-note-size);
     }
 
     #privacy .mobile-quip {
@@ -1355,7 +1359,7 @@ html[dir="rtl"] .demo .section-intro {
         right: clamp(8px, 4vw, 18px);
         bottom: clamp(6px, 2svh, 16px);
         max-width: 14ch;
-        font-size: clamp(0.86rem, 4.5vw, 1rem);
+        font-size: var(--hand-note-size);
     }
 
     #demo .mobile-quip {
@@ -1369,7 +1373,10 @@ html[dir="rtl"] .demo .section-intro {
         top: 0.72rem;
         right: 3.3rem;
         max-width: 7.5rem;
-        font-size: clamp(0.72rem, 3.8vw, 0.9rem);
+        font-size: var(--hand-note-size);
+        line-height: var(--hand-note-leading);
+        letter-spacing: var(--hand-note-tracking);
+        opacity: var(--hand-note-opacity);
         transform: rotate(-5deg);
     }
     .dev-lock {
