@@ -36,6 +36,8 @@
             localDefaultNote: 'Your photos stay on your machine.',
             noAccount: 'No account',
             noAccountNote: 'Download it. Run it. Skip the portal dance.',
+            photoshootOverline: 'Desktop app',
+            photoshootTitle: 'desktop application photoshoot',
             workflowOverline: 'Workflow',
             workflowTitle: 'From camera-roll soup to named people.',
             workflowText: 'Three boring steps. That is the point. The app does the face grouping; you keep control of the names and files.',
@@ -214,6 +216,8 @@
         ['.facts div:nth-child(3) > span', 'localDefaultNote'],
         ['.facts div:nth-child(4) strong', 'noAccount'],
         ['.facts div:nth-child(4) > span', 'noAccountNote'],
+        ['.photoshoot .overline', 'photoshootOverline'],
+        ['#photoshoot-title', 'photoshootTitle'],
         ['.workflow .overline', 'workflowOverline'],
         ['#workflow-title', 'workflowTitle'],
         ['.workflow .section-intro > p:not(.overline)', 'workflowText'],
@@ -366,67 +370,75 @@
             copy[currentLanguage].slideReviewLabel,
         ];
         document.querySelectorAll('.carousel-controls button').forEach((control, index) => {
-            control.setAttribute('aria-label', labels[index] || labels[0]);
+            control.setAttribute('aria-label', labels[index % labels.length] || labels[0]);
         });
     }
 
     function initCarousel() {
-        const root = document.querySelector('[data-carousel]');
-        if (!root) return;
+        const roots = Array.from(document.querySelectorAll('[data-carousel]'));
+        if (!roots.length) return;
 
-        const slides = Array.from(root.querySelectorAll('.carousel-slide'));
-        const controls = Array.from(root.querySelectorAll('.carousel-controls button'));
-        const title = document.getElementById('carouselTitle');
-        const caption = document.getElementById('carouselCaption');
-        let activeIndex = 0;
-        let timer = null;
+        const refreshers = [];
 
-        function setSlide(index) {
-            activeIndex = (index + slides.length) % slides.length;
+        roots.forEach((root) => {
+            const slides = Array.from(root.querySelectorAll('.carousel-slide'));
+            const controls = Array.from(root.querySelectorAll('.carousel-controls button'));
+            const title = root.querySelector('.carousel-title') || document.getElementById('carouselTitle');
+            const caption = root.querySelector('.carousel-caption') || document.getElementById('carouselCaption');
+            let activeIndex = 0;
+            let timer = null;
 
-            slides.forEach((slide, slideIndex) => {
-                slide.classList.toggle('is-active', slideIndex === activeIndex);
+            if (!slides.length) return;
+
+            function setSlide(index) {
+                activeIndex = (index + slides.length) % slides.length;
+
+                slides.forEach((slide, slideIndex) => {
+                    slide.classList.toggle('is-active', slideIndex === activeIndex);
+                });
+
+                controls.forEach((control, controlIndex) => {
+                    const isActive = controlIndex === activeIndex;
+                    control.classList.toggle('is-active', isActive);
+                    control.setAttribute('aria-pressed', String(isActive));
+                });
+
+                const localized = carouselCopy[currentLanguage][activeIndex] || carouselCopy.en[activeIndex];
+                if (title) title.textContent = localized[0];
+                if (caption) caption.textContent = localized[1];
+            }
+
+            function start() {
+                if (reduceMotion || timer) return;
+                timer = window.setInterval(() => setSlide(activeIndex + 1), 3600);
+            }
+
+            function stop() {
+                if (!timer) return;
+                window.clearInterval(timer);
+                timer = null;
+            }
+
+            controls.forEach((control, index) => {
+                control.addEventListener('click', () => {
+                    stop();
+                    setSlide(index);
+                    start();
+                });
             });
 
-            controls.forEach((control, controlIndex) => {
-                const isActive = controlIndex === activeIndex;
-                control.classList.toggle('is-active', isActive);
-                control.setAttribute('aria-pressed', String(isActive));
-            });
+            root.addEventListener('mouseenter', stop);
+            root.addEventListener('mouseleave', start);
+            root.addEventListener('focusin', stop);
+            root.addEventListener('focusout', start);
 
-            const localized = carouselCopy[currentLanguage][activeIndex] || carouselCopy.en[activeIndex];
-            if (title) title.textContent = localized[0];
-            if (caption) caption.textContent = localized[1];
-        }
-
-        function start() {
-            if (reduceMotion || timer) return;
-            timer = window.setInterval(() => setSlide(activeIndex + 1), 3600);
-        }
-
-        function stop() {
-            if (!timer) return;
-            window.clearInterval(timer);
-            timer = null;
-        }
-
-        controls.forEach((control, index) => {
-            control.addEventListener('click', () => {
-                stop();
-                setSlide(index);
-                start();
-            });
+            refreshers.push(() => setSlide(activeIndex));
+            setSlide(0);
+            start();
         });
 
-        root.addEventListener('mouseenter', stop);
-        root.addEventListener('mouseleave', start);
-        root.addEventListener('focusin', stop);
-        root.addEventListener('focusout', start);
-
-        refreshCarouselLanguage = () => setSlide(activeIndex);
+        refreshCarouselLanguage = () => refreshers.forEach((refresh) => refresh());
         updateCarouselControls();
-        setSlide(0);
-        start();
     }
 
     function initScrollEffects() {
@@ -488,6 +500,7 @@
         const deckClass = 'mobile-stack-deck';
         const stackDefinitions = [
             { selector: '.hero' },
+            { selector: '#photoshoot' },
             { selector: '#workflow', quipKey: 'workflowQuipOne' },
             { selector: '#privacy', quipKey: 'privacyQuipOne' },
             { selector: '#developers', quipKey: 'developersQuipOne' },

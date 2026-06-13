@@ -293,6 +293,8 @@ main > section {
     scroll-snap-stop: always;
 }
 
+.photoshoot { display: none !important; }
+
 .hero {
     min-height: calc(100dvh - var(--header-space));
     padding: clamp(22px, 4vw, 48px) 0;
@@ -1105,6 +1107,7 @@ html[dir="rtl"] .demo .section-intro {
     main > section { scroll-snap-align: none; }
 
     .hero,
+    #photoshoot,
     #workflow,
     #privacy,
     #developers,
@@ -1200,6 +1203,52 @@ html[dir="rtl"] .demo .section-intro {
         line-height: 1.5;
     }
 
+    .photoshoot {
+        display: grid !important;
+        gap: clamp(0.72rem, 2.5svh, 1.05rem);
+        align-content: center;
+    }
+
+    .photoshoot .section-intro {
+        margin-bottom: 0;
+    }
+
+    #photoshoot h2 {
+        max-width: 11ch;
+        margin-bottom: 0;
+        font-size: clamp(2rem, 9.4vw, 3.2rem);
+        line-height: 0.96;
+        text-transform: lowercase;
+    }
+
+    .mobile-carousel {
+        width: 100%;
+        margin: 0;
+    }
+
+    .mobile-carousel .carousel-frame {
+        aspect-ratio: 4 / 3;
+    }
+
+    .mobile-carousel .carousel-slide {
+        padding: 6px;
+    }
+
+    .mobile-carousel figcaption {
+        grid-template-columns: 1fr;
+        gap: 0.3rem;
+        margin-top: 0.55rem;
+    }
+
+    .mobile-carousel .carousel-controls {
+        margin-top: 0.5rem;
+    }
+
+    .mobile-carousel .carousel-controls button {
+        width: 38px;
+        height: 36px;
+    }
+
     .workflow-list {
         gap: 0.42rem;
     }
@@ -1239,10 +1288,10 @@ html[dir="rtl"] .demo .section-intro {
     }
 
     #workflow .step-copy p {
-        display: -webkit-box;
-        overflow: hidden;
-        -webkit-line-clamp: 1;
-        -webkit-box-orient: vertical;
+        display: block;
+        overflow: visible;
+        -webkit-line-clamp: unset;
+        -webkit-box-orient: unset;
     }
 
     #workflow .step-copy h3.hand-note {
@@ -1412,6 +1461,7 @@ html[dir="rtl"] .demo .section-intro {
     }
 
     html.mobile-stack-deck .hero,
+    html.mobile-stack-deck #photoshoot,
     html.mobile-stack-deck #workflow,
     html.mobile-stack-deck #privacy,
     html.mobile-stack-deck #developers,
@@ -1436,6 +1486,7 @@ html[dir="rtl"] .demo .section-intro {
     }
 
     html.mobile-stack-deck .hero.is-active-stack,
+    html.mobile-stack-deck #photoshoot.is-active-stack,
     html.mobile-stack-deck #workflow.is-active-stack,
     html.mobile-stack-deck #privacy.is-active-stack,
     html.mobile-stack-deck #developers.is-active-stack,
@@ -1501,9 +1552,37 @@ html[dir="rtl"] .demo .section-intro {
 }
 
 @media (max-width: 720px) and (max-height: 640px) {
+    #workflow .mobile-quip,
     #privacy .mobile-quip,
     #developers .mobile-quip {
         display: none;
+    }
+
+    .photoshoot {
+        gap: 0.55rem;
+    }
+
+    #photoshoot h2 {
+        max-width: 13ch;
+        font-size: clamp(1.72rem, 9vw, 2.3rem);
+        line-height: 0.95;
+    }
+
+    .mobile-carousel .carousel-frame {
+        aspect-ratio: 16 / 10;
+    }
+
+    .mobile-carousel figcaption {
+        display: none;
+    }
+
+    .mobile-carousel .carousel-controls {
+        margin-top: 0.35rem;
+    }
+
+    .mobile-carousel .carousel-controls button {
+        width: 34px;
+        height: 28px;
     }
 }
 
