@@ -310,6 +310,8 @@ main > section {
     font-size: 0.78rem;
     font-weight: 760;
     letter-spacing: 0.075em;
+    width: max-content;
+    max-width: 100%;
     text-transform: uppercase;
 }
 
@@ -1327,6 +1329,7 @@ html[dir="rtl"] .demo .section-intro {
 
     .mobile-stack {
         isolation: isolate;
+        transform-origin: 50% 50%;
     }
 
     .mobile-stack > :not(.mobile-quip) {
@@ -1336,7 +1339,7 @@ html[dir="rtl"] .demo .section-intro {
 
     .mobile-stack > .mobile-quip {
         position: absolute;
-        z-index: 0;
+        z-index: 2;
     }
 
     .mobile-stack.is-active-stack > .mobile-quip {
@@ -1344,49 +1347,132 @@ html[dir="rtl"] .demo .section-intro {
         visibility: visible;
     }
 
-    .mobile-stack .mobile-quip {
-        right: clamp(8px, 4vw, 18px);
-        bottom: clamp(10px, 4svh, 28px);
-    }
-
+    .mobile-stack .mobile-quip,
     .mobile-stack.is-mobile-stack-alt .mobile-quip {
-        right: auto;
-        left: clamp(8px, 4vw, 18px);
-        transform: rotate(4deg);
+        left: auto;
+        right: clamp(10px, 4.2vw, 20px);
+        top: clamp(0.35rem, 3.2svh, 1.65rem);
+        bottom: auto;
+        width: max-content;
+        max-width: min(15ch, 43vw);
+        transform: rotate(-4deg);
     }
 
     #workflow .mobile-quip {
-        left: auto;
         right: clamp(2px, 1.5vw, 8px);
         top: clamp(9rem, 27svh, 12.5rem);
-        bottom: auto;
         max-width: min(13ch, 38vw);
-        font-size: var(--hand-note-size);
         transform: rotate(-5deg);
     }
 
     #privacy .mobile-quip {
-        left: clamp(8px, 4vw, 18px);
-        right: auto;
-        bottom: clamp(8px, 3svh, 22px);
-        transform: rotate(4deg);
+        right: clamp(8px, 4vw, 18px);
+        top: clamp(0.35rem, 4svh, 2.1rem);
+        max-width: min(15ch, 44vw);
+        transform: rotate(-4deg);
     }
 
     #developers .mobile-quip {
-        position: static;
-        z-index: 1;
-        width: max-content;
-        max-width: min(14ch, 58vw);
-        margin: clamp(0.74rem, 2svh, 1.12rem) clamp(1.25rem, 12vw, 3.25rem) 0 auto;
-        font-size: var(--hand-note-size);
-        transform: rotate(4deg);
+        right: clamp(8px, 4vw, 18px);
+        top: clamp(0.45rem, 4svh, 2.15rem);
+        max-width: min(13ch, 40vw);
+        transform: rotate(-4deg);
     }
 
     #demo .mobile-quip {
-        left: clamp(8px, 4vw, 18px);
-        right: auto;
-        bottom: clamp(8px, 3svh, 22px);
-        transform: rotate(4deg);
+        right: clamp(8px, 4vw, 18px);
+        top: clamp(0.35rem, 4svh, 2.05rem);
+        max-width: min(14ch, 42vw);
+        transform: rotate(-4deg);
+    }
+
+    html.mobile-stack-deck,
+    html.mobile-stack-deck body {
+        height: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
+        scroll-snap-type: none;
+    }
+
+    html.mobile-stack-deck body {
+        min-height: 100svh;
+    }
+
+    html.mobile-stack-deck main {
+        position: fixed;
+        left: 50%;
+        top: calc(var(--header-space) + 6px);
+        z-index: 1;
+        width: min(100% - 24px, 640px);
+        height: calc(100svh - var(--header-space) - max(16px, env(safe-area-inset-bottom)));
+        margin: 0;
+        overflow: visible;
+        transform: translateX(-50%);
+        contain: layout paint;
+    }
+
+    html.mobile-stack-deck .hero,
+    html.mobile-stack-deck #workflow,
+    html.mobile-stack-deck #privacy,
+    html.mobile-stack-deck #developers,
+    html.mobile-stack-deck #demo {
+        position: absolute;
+        inset: 0;
+        min-height: 0;
+        height: 100%;
+        width: 100%;
+        padding-top: 0;
+        padding-bottom: 0;
+        border-top: 0;
+        border-bottom: 0;
+        opacity: 0;
+        pointer-events: none;
+        transform: translate3d(0, 18%, 0) scale(0.965);
+        transition:
+            transform 520ms cubic-bezier(0.2, 0.8, 0.2, 1),
+            opacity 360ms ease,
+            filter 520ms ease;
+        will-change: transform, opacity;
+    }
+
+    html.mobile-stack-deck .hero.is-active-stack,
+    html.mobile-stack-deck #workflow.is-active-stack,
+    html.mobile-stack-deck #privacy.is-active-stack,
+    html.mobile-stack-deck #developers.is-active-stack,
+    html.mobile-stack-deck #demo.is-active-stack {
+        z-index: 4;
+        opacity: 1;
+        pointer-events: auto;
+        transform: translate3d(0, 0, 0) scale(1);
+        filter: none;
+    }
+
+    html.mobile-stack-deck .mobile-stack.is-prev-stack {
+        z-index: 2;
+        opacity: 0;
+        transform: translate3d(0, -18%, 0) scale(0.965);
+        filter: blur(0.5px);
+    }
+
+    html.mobile-stack-deck .mobile-stack.is-next-stack {
+        z-index: 1;
+        opacity: 0;
+        transform: translate3d(0, 18%, 0) scale(0.965);
+        filter: blur(0.5px);
+    }
+
+    html.mobile-stack-deck .mobile-stack.is-before-stack {
+        transform: translate3d(0, -34%, 0) scale(0.94);
+    }
+
+    html.mobile-stack-deck .mobile-stack.is-after-stack {
+        transform: translate3d(0, 34%, 0) scale(0.94);
+    }
+
+    html.mobile-stack-deck main > section:not(.mobile-stack),
+    html.mobile-stack-deck .faq,
+    html.mobile-stack-deck .footer {
+        display: none !important;
     }
 
     .dev-status {
@@ -1406,7 +1492,7 @@ html[dir="rtl"] .demo .section-intro {
         height: 32px;
     }
     .developer-grid .is-locked strong { padding-right: 0; }
-    .faq { display: none; }
+    main > .faq { display: none !important; }
     .privacy-copy, .section-intro p:not(.overline) { font-size: 0.95rem; }
     .footer { display: grid; }
     .scroll-veil { display: none; }

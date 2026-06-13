@@ -485,6 +485,7 @@
 
     function initStackScroller() {
         const mobileStack = window.matchMedia('(max-width: 720px)');
+        const deckClass = 'mobile-stack-deck';
         const stackDefinitions = [
             { selector: '.hero' },
             { selector: '#workflow', quipKey: 'workflowQuipOne' },
@@ -493,10 +494,13 @@
             { selector: '#demo', quipKey: 'demoQuipOne' },
         ];
         let stacks = [];
+        let activeIndex = 0;
+        let deckEnabled = false;
         let locked = false;
         let touchStartY = 0;
+        let touchStartX = 0;
         let touchConsumed = false;
-        let activeFrame = 0;
+        let resizeFrame = 0;
 
         function refreshStacks() {
             stacks = stackDefinitions
@@ -504,9 +508,10 @@
                     return Array.from(document.querySelectorAll(definition.selector)).map((element) => ({ element, definition }));
                 })
                 .filter((entry, index, list) => list.findIndex((item) => item.element === entry.element) === index)
-                .filter((entry) => entry.element.getBoundingClientRect().height > 24);
+                .filter((entry) => entry.element.getBoundingClientRect().height > 24 || entry.element.classList.contains('mobile-stack'));
             stacks.forEach(({ element, definition }, index) => prepareStack(element, definition, index));
-            updateActiveStack();
+            activeIndex = Math.max(0, Math.min(stacks.length - 1, activeIndex));
+            syncDeckMode();
         }
 
         function isInteractiveTarget(target) {
@@ -514,12 +519,24 @@
             return Boolean(target.closest('a, button, input, textarea, select, video, .nav-links, .carousel-controls'));
         }
 
+        function initialIndex() {
+            const hash = decodeURIComponent(window.location.hash || '');
+            if (hash) {
+                const hashIndex = stacks.findIndex(({ element }) => `#${element.id}` === hash);
+                if (hashIndex >= 0) return hashIndex;
+            }
+            const active = stacks.findIndex(({ element }) => element.classList.contains('is-active-stack'));
+            if (active >= 0) return active;
+            return nearestDocumentStackIndex();
+        }
+
         function stackOffset() {
             const navRect = document.querySelector('.site-header')?.getBoundingClientRect();
             return Math.round((navRect?.bottom || 82) + 12);
         }
 
-        function nearestStackIndex() {
+        function nearestDocumentStackIndex() {
+            if (!stacks.length) return 0;
             const offset = stackOffset();
             let nearest = 0;
             let nearestDistance = Number.POSITIVE_INFINITY;
@@ -533,78 +550,143 @@
             return nearest;
         }
 
-        function updateActiveStack() {
-            if (!stacks.length) return;
-            const active = mobileStack.matches ? nearestStackIndex() : -1;
+        function setDeckEnabled(enabled) {
+            if (deckEnabled === enabled) return;
+            deckEnabled = enabled;
+            document.documentElement.classList.toggle(deckClass, enabled);
+            document.body.classList.toggle(deckClass, enabled);
+            if (enabled) {
+                activeIndex = initialIndex();
+                window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+            } else {
+                stacks.forEach(({ element }) => {
+                    element.classList.remove('is-active-stack', 'is-prev-stack', 'is-next-stack', 'is-before-stack', 'is-after-stack');
+                    element.removeAttribute('aria-hidden');
+                    element.style.removeProperty('--stack-distance');
+                });
+            }
+        }
+
+        function syncDeckMode() {
+            const shouldEnable = mobileStack.matches && stacks.length > 1;
+            setDeckEnabled(shouldEnable);
+            if (shouldEnable) {
+                applyDeckState();
+            } else {
+                updateDocumentActiveStack();
+            }
+        }
+
+        function applyDeckState() {
+            if (!deckEnabled || !stacks.length) return;
+            activeIndex = Math.max(0, Math.min(stacks.length - 1, activeIndex));
+            stacks.forEach(({ element }, index) => {
+                const distance = index - activeIndex;
+                element.style.setProperty('--stack-distance', String(distance));
+                element.classList.toggle('is-active-stack', distance === 0);
+                element.classList.toggle('is-prev-stack', distance === -1);
+                element.classList.toggle('is-next-stack', distance === 1);
+                element.classList.toggle('is-before-stack', distance < -1);
+                element.classList.toggle('is-after-stack', distance > 1);
+                element.setAttribute('aria-hidden', String(distance !== 0));
+            });
+        }
+
+        function updateDocumentActiveStack() {
+            if (!stacks.length || deckEnabled) return;
+            const active = mobileStack.matches ? nearestDocumentStackIndex() : -1;
             stacks.forEach(({ element }, index) => {
                 element.classList.toggle('is-active-stack', index === active);
             });
         }
 
-        function queueActiveUpdate() {
-            if (activeFrame) return;
-            activeFrame = window.requestAnimationFrame(() => {
-                activeFrame = 0;
-                updateActiveStack();
+        function queueRefresh() {
+            if (resizeFrame) return;
+            resizeFrame = window.requestAnimationFrame(() => {
+                resizeFrame = 0;
+                refreshStacks();
             });
         }
 
         function go(direction) {
-            if (!mobileStack.matches || reduceMotion || locked) return;
-            if (!stacks.length) refreshStacks();
-            if (!stacks.length) return;
-
-            const current = nearestStackIndex();
-            const next = Math.max(0, Math.min(stacks.length - 1, current + direction));
-            const target = stacks[next]?.element;
-            if (!target || next === current) return;
-
+            if (!deckEnabled || locked || !stacks.length) return;
+            const next = Math.max(0, Math.min(stacks.length - 1, activeIndex + direction));
+            if (next === activeIndex) return;
             locked = true;
-            const top = target.getBoundingClientRect().top + window.scrollY - stackOffset();
-            window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
-            queueActiveUpdate();
-            window.setTimeout(() => {
-                locked = false;
-                updateActiveStack();
-            }, 620);
+            activeIndex = next;
+            applyDeckState();
+            window.setTimeout(() => { locked = false; }, reduceMotion ? 80 : 520);
+        }
+
+        function goToElement(target) {
+            if (!target || !deckEnabled) return false;
+            const index = stacks.findIndex(({ element }) => element === target);
+            if (index < 0) return false;
+            activeIndex = index;
+            applyDeckState();
+            setOpen(false);
+            return true;
         }
 
         refreshStacks();
-        refreshMobileStacks = refreshStacks;
-        window.addEventListener('resize', () => {
-            refreshStacks();
-            queueActiveUpdate();
+        refreshMobileStacks = () => {
+            stacks.forEach(({ element, definition }, index) => prepareStack(element, definition, index));
+            applyDeckState();
+        };
+
+        if (typeof mobileStack.addEventListener === 'function') {
+            mobileStack.addEventListener('change', refreshStacks);
+        } else if (typeof mobileStack.addListener === 'function') {
+            mobileStack.addListener(refreshStacks);
+        }
+        window.addEventListener('resize', queueRefresh);
+        window.addEventListener('orientationchange', queueRefresh);
+        window.addEventListener('load', queueRefresh);
+        window.addEventListener('scroll', () => {
+            if (!deckEnabled) updateDocumentActiveStack();
+        }, { passive: true });
+
+        document.addEventListener('click', (event) => {
+            if (!deckEnabled) return;
+            const link = event.target?.closest?.('a[href^="#"]');
+            if (!link) return;
+            const hash = link.getAttribute('href');
+            const target = hash && hash.length > 1 ? document.querySelector(hash) : null;
+            if (!target) return;
+            if (goToElement(target)) {
+                event.preventDefault();
+                if (window.history?.replaceState) window.history.replaceState(null, '', hash);
+            }
         });
-        window.addEventListener('load', () => {
-            refreshStacks();
-            queueActiveUpdate();
-        });
-        window.addEventListener('scroll', queueActiveUpdate, { passive: true });
 
         window.addEventListener('wheel', (event) => {
-            if (!mobileStack.matches || Math.abs(event.deltaY) < 12 || isInteractiveTarget(event.target)) return;
+            if (!deckEnabled || Math.abs(event.deltaY) < 12 || isInteractiveTarget(event.target)) return;
             event.preventDefault();
             go(event.deltaY > 0 ? 1 : -1);
         }, { passive: false });
 
         window.addEventListener('touchstart', (event) => {
-            if (!mobileStack.matches || isInteractiveTarget(event.target)) return;
+            if (!deckEnabled || isInteractiveTarget(event.target)) return;
             touchStartY = event.touches[0]?.clientY || 0;
+            touchStartX = event.touches[0]?.clientX || 0;
             touchConsumed = false;
         }, { passive: true });
 
         window.addEventListener('touchmove', (event) => {
-            if (!mobileStack.matches || touchConsumed || isInteractiveTarget(event.target)) return;
+            if (!deckEnabled || touchConsumed || isInteractiveTarget(event.target)) return;
             const currentY = event.touches[0]?.clientY || touchStartY;
-            const delta = touchStartY - currentY;
-            if (Math.abs(delta) < 46) return;
+            const currentX = event.touches[0]?.clientX || touchStartX;
+            const deltaY = touchStartY - currentY;
+            const deltaX = touchStartX - currentX;
+            if (Math.abs(deltaY) < 34 || Math.abs(deltaY) < Math.abs(deltaX) * 1.15) return;
             event.preventDefault();
             touchConsumed = true;
-            go(delta > 0 ? 1 : -1);
+            go(deltaY > 0 ? 1 : -1);
         }, { passive: false });
 
         window.addEventListener('touchend', () => {
             touchStartY = 0;
+            touchStartX = 0;
             touchConsumed = false;
         }, { passive: true });
 
