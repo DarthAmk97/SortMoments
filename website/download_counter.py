@@ -23,6 +23,7 @@ VISITOR_SECRET_FILE = '/var/www/sortmoments/data/visitor_salt.secret'
 VISITOR_COOKIE_NAME = 'sortmoments_visitor_id'
 VISITOR_COOKIE_MAX_AGE = 365 * 24 * 60 * 60
 VISITOR_BASELINE_OFFSET_KEY = 'visitor_baseline_offset'
+DOWNLOAD_DISPLAY_FLOOR_KEY = 'download_display_floor'
 DATA_DIR = Path(COUNTER_FILE).parent
 GITHUB_RELEASE_API = 'https://api.github.com/repos/DarthAmk97/SortMoments/releases/tags/v1.0.0-beta'
 TRACKED_ASSET_EXTENSIONS = ('.exe', '.zip', '.dmg')
@@ -45,9 +46,10 @@ class CounterHandler(BaseHTTPRequestHandler):
             count = self.read_counter()
             self._send_json({'count': count})
         elif path == '/api/counter/increment':
-            # Backwards compatibility for older deployed JS. Do not create a
-            # fake click count; real product downloads are tracked by GitHub.
-            count = self.read_counter()
+            # Record a click-driven public floor so the on-page count updates
+            # immediately. GitHub Releases remains the external source; reads
+            # return max(GitHub count, this local floor) so GitHub can catch up.
+            count = self.increment_counter()
             self._send_json({'count': count})
         elif path in ('/api/analytics', '/api/visitor'):
             # track=0 is useful for health checks and previews that should not
@@ -169,7 +171,7 @@ class CounterHandler(BaseHTTPRequestHandler):
 
     @staticmethod
     def read_counter():
-        """Return cached GitHub release download total, refreshing when stale."""
+        """Return cached GitHub release total with the local display floor."""
         cached = CounterHandler._read_cache()
         now = int(time.time())
 
@@ -178,14 +180,61 @@ class CounterHandler(BaseHTTPRequestHandler):
         updated_at = int(cached.get('updated_at') or 0) if isinstance(cached, dict) else 0
 
         if cached_count and updated_at and now - updated_at < CACHE_TTL_SECONDS:
-            return cached_count
+            return CounterHandler._apply_download_display_floor(cached_count)
 
         try:
             fresh = CounterHandler.refresh_counter_cache()
-            return fresh['count']
+            return CounterHandler._apply_download_display_floor(fresh['count'])
         except Exception as e:
             print(f"Error fetching GitHub release counter: {e}")
-            return cached_count
+            return CounterHandler._apply_download_display_floor(cached_count)
+
+    @staticmethod
+    def _read_meta_int(key, default=0):
+        conn = CounterHandler._ensure_visitor_db()
+        try:
+            row = conn.execute(
+                'SELECT value FROM analytics_meta WHERE key = ?',
+                (key,),
+            ).fetchone()
+            if not row:
+                return default
+            try:
+                return int(row[0])
+            except (TypeError, ValueError):
+                return default
+        finally:
+            conn.close()
+
+    @staticmethod
+    def _write_meta_int(key, value):
+        conn = CounterHandler._ensure_visitor_db()
+        try:
+            conn.execute(
+                '''
+                INSERT INTO analytics_meta (key, value, updated_at)
+                VALUES (?, ?, ?)
+                ON CONFLICT(key) DO UPDATE SET
+                    value = excluded.value,
+                    updated_at = excluded.updated_at
+                ''',
+                (key, str(int(value)), int(time.time())),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    @staticmethod
+    def _apply_download_display_floor(count):
+        floor = CounterHandler._read_meta_int(DOWNLOAD_DISPLAY_FLOOR_KEY, 0)
+        return max(int(count or 0), floor)
+
+    @staticmethod
+    def increment_counter():
+        """Increment the public download floor and return the displayed total."""
+        next_count = CounterHandler.read_counter() + 1
+        CounterHandler._write_meta_int(DOWNLOAD_DISPLAY_FLOOR_KEY, next_count)
+        return next_count
 
     @staticmethod
     def _ensure_visitor_secret():

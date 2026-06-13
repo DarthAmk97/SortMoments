@@ -30,8 +30,8 @@
             downloadMacos: 'Download for macOS',
             macosSub: 'Apple Silicon beta',
             factsLabel: 'Product facts',
-            factsDownloadsNote: 'GitHub Releases is the source. Rounded down in this strip.',
-            factsVisitorsNote: 'First-party site analytics. Exact public count, no accounts.',
+            factsDownloadsNote: 'crazy right?',
+            factsVisitorsNote: 'First-party site analytics. no accounts.',
             localDefault: 'Local by default',
             localDefaultNote: 'Your photos stay on your machine.',
             noAccount: 'No account',
@@ -111,8 +111,8 @@
             downloadMacos: 'macOS کے لیے ڈاؤن لوڈ کریں',
             macosSub: 'Apple Silicon بیٹا',
             factsLabel: 'پروڈکٹ فیکٹس',
-            factsDownloadsNote: 'source GitHub Releases ہے۔ اس strip میں conservative rounded count ہے۔',
-            factsVisitorsNote: 'first-party site analytics۔ exact public count، accounts کے بغیر۔',
+            factsDownloadsNote: 'crazy right?',
+            factsVisitorsNote: 'first-party site analytics۔ accounts کے بغیر۔',
             localDefault: 'ڈیفالٹ طور پر مقامی',
             localDefaultNote: 'آپ کی تصاویر آپ کے کمپیوٹر پر رہتی ہیں۔',
             noAccount: 'اکاؤنٹ نہیں',
@@ -268,6 +268,7 @@
     applyLanguage(currentLanguage, false);
     initLanguageToggle();
     initStats();
+    initDownloadTracking();
     initCarousel();
     initScrollEffects();
     initStackScroller();
@@ -645,11 +646,19 @@
             const formattedDownloads = formatCount(downloads, fallback.downloads);
             const formattedVisitors = formatCount(visitors, fallback.visitors);
             const proofDownloads = formatDownloadProofCount(downloads, '300+');
+            const proofVisitors = formatVisitorProofCount(visitors, fallback.visitors);
             downloadHero.textContent = formattedDownloads;
             visitorHero.textContent = formattedVisitors;
             if (downloadFact) downloadFact.textContent = proofDownloads;
-            if (visitorFact) visitorFact.textContent = formattedVisitors;
-            latestStats = { formattedDownloads, formattedVisitors, proofDownloads };
+            if (visitorFact) visitorFact.textContent = proofVisitors;
+            latestStats = {
+                downloads: parseCount(downloads),
+                visitors: parseCount(visitors),
+                formattedDownloads,
+                formattedVisitors,
+                proofDownloads,
+                proofVisitors,
+            };
             updateStatsSourceCopy();
         }
 
@@ -716,24 +725,79 @@
         return formatCompactCount(number);
     }
 
+    function formatVisitorProofCount(value, fallback) {
+        const number = parseCount(value);
+        if (!Number.isFinite(number) || number <= 0) return fallback;
+        if (number < 1000) return number.toLocaleString();
+        return `${Math.floor(number / 1000)}K+`;
+    }
+
+    function incrementDownloadStats(count) {
+        const downloadHero = document.getElementById('downloadCountAlt');
+        const downloadFact = document.getElementById('downloadCountFact');
+        const currentDisplayedCount = parseCount(downloadHero?.textContent);
+        const nextCount = Number.isFinite(count)
+            ? count
+            : (Number.isFinite(latestStats?.downloads)
+                ? latestStats.downloads + 1
+                : currentDisplayedCount + 1);
+
+        if (!Number.isFinite(nextCount) || nextCount <= 0) return;
+
+        const formattedDownloads = formatCount(nextCount, downloadHero?.dataset.fallback || '300+');
+        const proofDownloads = formatDownloadProofCount(nextCount, '300+');
+        if (downloadHero) downloadHero.textContent = formattedDownloads;
+        if (downloadFact) downloadFact.textContent = proofDownloads;
+        latestStats = {
+            ...(latestStats || {}),
+            downloads: nextCount,
+            formattedDownloads,
+            proofDownloads,
+        };
+        updateStatsSourceCopy();
+    }
+
+    function initDownloadTracking() {
+        const links = document.querySelectorAll('.hero-actions a[href*="/releases/download/"]');
+        links.forEach((link) => {
+            link.addEventListener('click', () => {
+                incrementDownloadStats();
+                const endpoint = isStaticLocalPreview()
+                    ? 'https://sortmoments.com/api/counter/increment'
+                    : '/api/counter/increment';
+                fetch(endpoint, {
+                    method: 'GET',
+                    cache: 'no-store',
+                    keepalive: true,
+                })
+                    .then((response) => (response.ok ? response.json() : null))
+                    .then((data) => {
+                        const serverCount = Number(data?.count);
+                        if (Number.isFinite(serverCount)) incrementDownloadStats(serverCount);
+                    })
+                    .catch(() => {});
+            }, { passive: true });
+        });
+    }
+
     function updateStatsSourceCopy() {
         if (!latestStats) return;
         const downloadSource = document.getElementById('downloadSourceText');
         const visitorSource = document.getElementById('visitorSourceText');
         if (currentLanguage === 'ur') {
             if (downloadSource) {
-                downloadSource.textContent = `GitHub Releases source ہے۔ اصل count ${latestStats.formattedDownloads}؛ یہاں ${latestStats.proofDownloads} دکھایا ہے۔`;
+                downloadSource.textContent = copy.ur.factsDownloadsNote;
             }
             if (visitorSource) {
-                visitorSource.textContent = `first-party site analytics۔ exact public count ${latestStats.formattedVisitors}، accounts کے بغیر۔`;
+                visitorSource.textContent = copy.ur.factsVisitorsNote;
             }
             return;
         }
         if (downloadSource) {
-            downloadSource.textContent = `GitHub Releases reports ${latestStats.formattedDownloads} asset downloads; shown here as ${latestStats.proofDownloads}.`;
+            downloadSource.textContent = copy.en.factsDownloadsNote;
         }
         if (visitorSource) {
-            visitorSource.textContent = `First-party site analytics. Exact public count: ${latestStats.formattedVisitors}, no accounts.`;
+            visitorSource.textContent = copy.en.factsVisitorsNote;
         }
     }
 
