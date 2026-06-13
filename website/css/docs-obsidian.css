@@ -1,4 +1,12 @@
-﻿:root {
+@font-face {
+    font-family: "Sort Hand";
+    src: url("../assets/fonts/sort-hand-kalam-700.woff") format("woff");
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+}
+
+:root {
     color-scheme: dark;
     --page: #050605;
     --surface: #10140f;
@@ -17,7 +25,7 @@
     --radius: 14px;
     --font: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-    --hand: "Segoe Print", "Bradley Hand ITC", "Comic Sans MS", cursive;
+    --hand: "Sort Hand", "Segoe Print", "Bradley Hand ITC", "Comic Sans MS", cursive;
 }
 
 * { box-sizing: border-box; }
